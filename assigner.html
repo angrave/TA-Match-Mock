@@ -86,17 +86,17 @@
   <div class="phase-strip">
     <div class="phase-card" id="card-2">
       <h3>Phase 2</h3>
-      <div class="pmeta">Guaranteed PhDs (year ≤ 5) · initial quotas · Sets A &amp; B</div>
+      <div class="pmeta">Guaranteed students (PhD ≤ 5 yrs + any MS/MSc w/ funding guarantee) · initial quotas · Sets A &amp; B</div>
       <div class="pstat" id="ps-2">Not yet run</div>
     </div>
     <div class="phase-card" id="card-3">
       <h3>Phase 3</h3>
-      <div class="pmeta">+ Post-year-5 PhDs · fill remaining initial quotas</div>
+      <div class="pmeta">+ Unguaranteed PhDs (typically past year 5) · fill remaining initial quotas</div>
       <div class="pstat" id="ps-3">Not yet run</div>
     </div>
     <div class="phase-card" id="card-4">
       <h3>Phase 4</h3>
-      <div class="pmeta">+ MSc students · raise to full slot count</div>
+      <div class="pmeta">+ Unguaranteed MS/MSc students · raise to full slot count</div>
       <div class="pstat" id="ps-4">Not yet run</div>
     </div>
   </div>
@@ -105,6 +105,7 @@
     <button class="btn" id="runPhaseBtn">Run next phase ▶</button>
     <button class="btn ghost" id="resetBtn">Reset assignments</button>
     <button class="btn ghost" id="autoFillBtn" title="Quickly create instructor forms for every course based on its area">Auto-fill missing instructor forms</button>
+    <button class="btn ghost" id="downloadXlsxBtn" title="Download current matching outcome as an Excel workbook">Download as Excel ⬇</button>
     <span id="phaseStatus" class="muted"></span>
   </div>
 
@@ -135,6 +136,7 @@
 </main>
 <div id="app-footer"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="app.js"></script>
 <script>
 let DATA = null;
@@ -160,9 +162,9 @@ function resetState() {
 }
 
 function studentTier(s) {
-  if (s.program === 'PhD' && s.year <= 5) return 0; // guaranteed
-  if (s.program === 'PhD') return 1; // post-5
-  return 2; // MSc
+  if (isGuaranteed(s)) return 0; // guaranteed funding (PhD ≤5 yrs, or MS/MSc w/ guarantee)
+  if (s.program === 'PhD') return 1; // unguaranteed PhD (typically post-5)
+  return 2; // unguaranteed MS/MSc
 }
 function phaseTierAllowed(phase) {
   if (phase === 2) return new Set([0]);
@@ -412,7 +414,7 @@ function renderAssignments() {
     const chips = matched.length ? matched.map(nid => {
       const s = studentByNetid[nid];
       const tier = s ? studentTier(s) : 9;
-      const tag = tier === 0 ? '' : (tier === 1 ? ' (post-5)' : ' (MSc)');
+      const tag = tier === 0 ? '' : (tier === 1 ? ' (PhD unguar.)' : ` (${s ? s.program : 'MS'})`);
       return `<span class="chip">${s ? s.name : nid} <span class="num">${nid}</span>${tag}</span>`;
     }).join('') : '<span class="nobody">no TA assigned</span>';
     return `
@@ -445,11 +447,11 @@ function runNextPhase() {
   if (p === 2) {
     // initialize log fresh
     STATE.log = [];
-    logLine(`<span class="dim">═══ Phase ${p}: guaranteed PhDs (year ≤ 5) → initial quotas ═══</span>`);
+    logLine(`<span class="dim">═══ Phase ${p}: guaranteed students (PhD ≤5 yrs + MS/MSc w/ guarantee) → initial quotas ═══</span>`);
   } else if (p === 3) {
-    logLine(`\n<span class="dim">═══ Phase ${p}: + post-year-5 PhDs ═══</span>`);
+    logLine(`\n<span class="dim">═══ Phase ${p}: + unguaranteed PhDs (typically past year 5) ═══</span>`);
   } else {
-    logLine(`\n<span class="dim">═══ Phase ${p}: + MSc students · quotas raised to full slot count ═══</span>`);
+    logLine(`\n<span class="dim">═══ Phase ${p}: + unguaranteed MS/MSc students · quotas raised to full slot count ═══</span>`);
   }
   const result = runHR(p);
   STATE.phase = p;
@@ -514,6 +516,103 @@ function autoFillInstructorForms() {
   renderAll();
 }
 
+function downloadXlsx() {
+  if (typeof XLSX === 'undefined') {
+    alert('Excel library failed to load. Check your network connection.');
+    return;
+  }
+  const sResp = getStudentResponses();
+  const iResp = getInstructorResponses();
+  const studentByNetid = {};
+  DATA.students.forEach(s => studentByNetid[s.netid] = s);
+  const iByCourse = {};
+  Object.values(iResp).forEach(r => { iByCourse[r.course_id] = r; });
+  const facultyByNetid = {};
+  (DATA.faculty || []).forEach(f => facultyByNetid[f.netid] = f);
+
+  const goal = c => STATE.phase >= 4 ? fullQuota(c) : initialQuota(c);
+
+  // Sheet 1: Assignments (one row per course)
+  const assignRows = DATA.courses.filter(c => c.slots > 0).map(c => {
+    const matched = STATE.assignments[c.course_id] || [];
+    const names = matched.map(nid => {
+      const s = studentByNetid[nid];
+      return s ? `${s.name} (${nid})` : nid;
+    });
+    const inst = iByCourse[c.course_id];
+    const instName = inst ? (facultyByNetid[inst.instructor]?.name || inst.instructor) : '';
+    return {
+      Course: c.course_id,
+      Title: c.title,
+      Area: c.area,
+      Level: c.level,
+      Set: isSetA(c) ? 'A' : 'B',
+      Slots: c.slots,
+      'Phase quota': goal(c),
+      Assigned: matched.length,
+      Status: matched.length === 0 ? 'unfilled' : (matched.length < goal(c) ? 'partial' : 'full'),
+      Instructor: instName,
+      'TAs (name + netid)': names.join('; '),
+      'TA netids': matched.join(', ')
+    };
+  });
+
+  // Sheet 2: Per-student assignment (one row per assigned student)
+  const studentRows = [];
+  DATA.courses.forEach(c => {
+    (STATE.assignments[c.course_id] || []).forEach(nid => {
+      const s = studentByNetid[nid];
+      studentRows.push({
+        Netid: nid,
+        Name: s ? s.name : '',
+        Program: s ? s.program : '',
+        Year: s ? s.year : '',
+        Area: s ? s.area : '',
+        Course: c.course_id,
+        'Course title': c.title,
+        'Course area': c.area,
+        Level: c.level
+      });
+    });
+  });
+  studentRows.sort((a, b) => a.Netid.localeCompare(b.Netid));
+
+  // Sheet 3: Unmatched eligible students (for current phase pool)
+  const allowed = phaseTierAllowed(STATE.phase || 4);
+  const unmatchedRows = DATA.students
+    .filter(s => sResp[s.netid] && allowed.has(studentTier(s)) && !STATE.byStudent[s.netid])
+    .map(s => ({
+      Netid: s.netid,
+      Name: s.name,
+      Program: s.program,
+      Year: s.year,
+      Area: s.area,
+      Tier: ['guaranteed', 'unguaranteed PhD', 'unguaranteed MS/MSc'][studentTier(s)],
+      Guaranteed: s.guaranteed
+    }));
+
+  // Sheet 4: Summary
+  const totalAssigned = Object.values(STATE.assignments).reduce((a, b) => a + b.length, 0);
+  const summaryRows = [
+    { Metric: 'Phase reached', Value: STATE.phase },
+    { Metric: 'Total students assigned', Value: totalAssigned },
+    { Metric: 'Courses with slots', Value: DATA.courses.filter(c => c.slots > 0).length },
+    { Metric: 'Courses fully filled', Value: DATA.courses.filter(c => c.slots > 0 && (STATE.assignments[c.course_id] || []).length >= goal(c)).length },
+    { Metric: 'Courses unfilled', Value: DATA.courses.filter(c => c.slots > 0 && (STATE.assignments[c.course_id] || []).length === 0).length },
+    { Metric: 'Unmatched eligible students', Value: unmatchedRows.length },
+    { Metric: 'Exported at', Value: new Date().toLocaleString() }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), 'Summary');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(assignRows), 'Assignments by course');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(studentRows), 'Assignments by student');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(unmatchedRows), 'Unmatched students');
+
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 16);
+  XLSX.writeFile(wb, `ta-assignments-phase${STATE.phase}-${ts}.xlsx`);
+}
+
 (async function() {
   DATA = await loadAllData();
   ensureSeededStudentResponses(DATA);
@@ -531,6 +630,7 @@ function autoFillInstructorForms() {
     renderAll();
   });
   document.getElementById('autoFillBtn').addEventListener('click', autoFillInstructorForms);
+  document.getElementById('downloadXlsxBtn').addEventListener('click', downloadXlsx);
   document.querySelectorAll('#filterSeg button').forEach(b => {
     b.addEventListener('click', () => {
       document.querySelectorAll('#filterSeg button').forEach(x => x.classList.remove('on'));

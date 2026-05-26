@@ -21,7 +21,7 @@
     <div class="instructions">
       <b>Instructions:</b> Fill out one form for every class you are teaching in the coming year. Answer the
       questions below, aiming to be as inclusive as possible about absolute requirements as well as preferences.
-      Please realize that MSc students and PhD students past year 5 are not guaranteed support; therefore, if your
+      Please realize that most MS/MSc students and PhD students past year 5 are not guaranteed support (some MS/MSc students do have a funding guarantee — those are flagged in the lists below); therefore, if your
       requirements for TAship eliminate all students who are guaranteed support, it is possible you will not be
       assigned a TA.
     </div>
@@ -61,7 +61,7 @@
           </select>
         </div>
       </div>
-      <label>Your thesis students (PhD or MSc) — netids, with optional notes</label>
+      <label>Your thesis students (PhD, MS, or MSc) — netids, with optional notes</label>
       <textarea id="i_thesis" placeholder="e.g. amelia2 (PhD Y3), oscarq2 (PhD Y2, admitted this year with TAship)"></textarea>
     </div>
 
@@ -159,8 +159,9 @@ let DATA = null;
 })();
 
 function studentLabel(s) {
-  const grad = s.program === 'PhD' ? `PhD Y${s.year}` : `MSc Y${s.year}`;
-  return `${s.name} — ${s.netid} (${grad}, ${s.area})`;
+  const grad = `${s.program} Y${s.year}`;
+  const g = isGuaranteed(s) ? ' · guaranteed' : '';
+  return `${s.name} — ${s.netid} (${grad}, ${s.area}${g})`;
 }
 
 function initInstructorForm(user) {
@@ -229,9 +230,9 @@ function initInstructorForm(user) {
     // Eligibility/priority indicators
     let badges = '';
     if (s) {
-      if (s.program === 'PhD' && s.year <= 5) badges += ' <span class="num" title="Within funding guarantee">★</span>';
-      if (s.program === 'PhD' && s.year > 5) badges += ' <span class="num" title="Past 5-year guarantee">!</span>';
-      if (s.program === 'MSc') badges += ' <span class="num" title="MSc — not guaranteed support">MSc</span>';
+      if (isGuaranteed(s)) badges += ' <span class="num" title="Has funding guarantee">★</span>';
+      else if (s.program === 'PhD') badges += ' <span class="num" title="PhD without funding guarantee (typically past year 5)">!</span>';
+      else if (isMastersProgram(s.program)) badges += ` <span class="num" title="${s.program} — not guaranteed support">${s.program}</span>`;
     }
     return `<span class="chip ${warn?'warn':''}">${idx!==null?`<span class="num">${idx+1}</span>`:''} ${label}${badges} <span class="x" data-nid="${nid}">×</span></span>`;
   }
@@ -306,11 +307,12 @@ function initInstructorForm(user) {
     // priority info for selected preferred students
     if (state.prefStudents.length) {
       const flagged = state.prefStudents.map(nid => DATA.students.find(s => s.netid === nid)).filter(Boolean);
-      const guaranteed = flagged.filter(s => s.program==='PhD' && s.year <= 5).length;
-      const past5 = flagged.filter(s => s.program==='PhD' && s.year > 5).length;
-      const ms = flagged.filter(s => s.program==='MSc').length;
-      html += `<div class="smart-hints">Among your preferred list: <b>${guaranteed}</b> within funding guarantee,
-        <b>${past5}</b> past year-5, <b>${ms}</b> MSc. (MSc &amp; past-5 students are not guaranteed support.)</div>`;
+      const guaranteed = flagged.filter(s => isGuaranteed(s)).length;
+      const phdUnguar = flagged.filter(s => s.program === 'PhD' && !isGuaranteed(s)).length;
+      const msUnguar = flagged.filter(s => isMastersProgram(s.program) && !isGuaranteed(s)).length;
+      html += `<div class="smart-hints">Among your preferred list: <b>${guaranteed}</b> with funding guarantee,
+        <b>${phdUnguar}</b> unguaranteed PhD, <b>${msUnguar}</b> unguaranteed MS/MSc.
+        (Students without a guarantee may not receive support.)</div>`;
     }
     if (!html) html = '<div class="muted small">No suggestions yet for this course.</div>';
     box.innerHTML = html;

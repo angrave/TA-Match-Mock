@@ -32,9 +32,23 @@ async function loadAllData() {
     c.slots = parseInt(c.slots, 10);
     c.hasReqs = c.level >= 400; // 400+ have explicit requirements
   });
-  students.forEach(s => { s.year = parseInt(s.year, 10); });
+  students.forEach(s => {
+    s.year = parseInt(s.year, 10);
+    // Normalize guaranteed flag: explicit column wins; otherwise PhDs ≤5 yrs default yes, others no.
+    if (s.guaranteed === 'yes' || s.guaranteed === 'no') {
+      // keep as-is
+    } else if (s.program === 'PhD' && s.year <= 5) {
+      s.guaranteed = 'yes';
+    } else {
+      s.guaranteed = 'no';
+    }
+  });
   return { courses, faculty, students };
 }
+
+// Programs: "PhD", "MS", "MSc" are the recognized values. MS and MSc are both masters.
+function isMastersProgram(p) { return p === 'MS' || p === 'MSc'; }
+function isGuaranteed(s) { return s.guaranteed === 'yes'; }
 
 // Deterministic pseudo-random so re-seeding is stable per netid
 function seededRand(seed) {
@@ -130,14 +144,14 @@ function buildSeededStudentResponse(student, courses, faculty) {
     Math.floor((sysBias ? 2.5 : 1.5) + rng() * 3.5)));
 
   const apptOptions = ['50only','50pref','25pref','25only'];
-  const apptWeights = student.program === 'MSc' ? [0.1, 0.5, 0.3, 0.1] : [0.2, 0.55, 0.2, 0.05];
+  const apptWeights = isMastersProgram(student.program) ? [0.1, 0.5, 0.3, 0.1] : [0.2, 0.55, 0.2, 0.05];
   let apptR = rng(), apptSel = '50pref', acc = 0;
   for (let i = 0; i < apptOptions.length; i++) {
     acc += apptWeights[i];
     if (apptR <= acc) { apptSel = apptOptions[i]; break; }
   }
 
-  const guarantee = student.program === 'MSc' ? 'na' : (student.year <= 5 ? 'yes' : 'no');
+  const guarantee = isGuaranteed(student) ? 'yes' : 'no';
   const eligible = rng() < 0.92 ? 'yes' : (rng() < 0.5 ? 'exempt' : 'no');
 
   const unavailOptions = [

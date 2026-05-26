@@ -76,11 +76,10 @@
       </div>
       <div class="row">
         <div id="phdRow">
-          <label>For PhD students: Within the 5-year funding guarantee?</label>
+          <label>Do you have a funding guarantee this semester?</label>
           <select id="f_guarantee">
-            <option value="yes">Yes — within 5-year guarantee</option>
-            <option value="no">No — past 5-year guarantee</option>
-            <option value="na">N/A (MSc student)</option>
+            <option value="yes">Yes — I have a funding guarantee (PhD within year 5, or MS/MSc with guaranteed support)</option>
+            <option value="no">No — I do not have a funding guarantee</option>
           </select>
         </div>
       </div>
@@ -222,8 +221,7 @@ function initStudentForm(user) {
   const adv = DATA.faculty.find(f => f.netid === me.advisor);
   document.getElementById('f_advisor').value = adv ? adv.name : '';
   document.getElementById('f_area').value = me.area;
-  document.getElementById('f_guarantee').value =
-    me.program === 'MSc' ? 'na' : (me.year <= 5 ? 'yes' : 'no');
+  document.getElementById('f_guarantee').value = isGuaranteed(me) ? 'yes' : 'no';
 
   // Faculty dropdowns
   const facSelHTML = `<option value="">— Select faculty —</option>` +

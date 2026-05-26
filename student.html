@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Student TA Preference Form — Siebel School</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="app-header"></div>
+<main>
+  <h1>Student TA Preference Form</h1>
+  <p class="muted">For graduate students seeking a TA assignment in the upcoming semester.</p>
+
+  <div id="noUser" class="banner" style="display:none">
+    Please choose a student from the <b>Acting as</b> dropdown in the header to begin.
+  </div>
+
+  <div id="formArea" style="display:none">
+
+    <div class="instructions">
+      <b>Instructions:</b> Please fill out the form indicating your eligibility and interest in each course
+      offered in the coming semester. You should consult the list of courses and their eligibility requirements
+      before filling out this form. Note that assignment is based on availability of positions and eligibility
+      for teaching the course.
+    </div>
+    <div class="recommendations">
+      <b>Recommendations:</b> Courses at the 400-level (and even some at lower levels) have explicit requirements
+      and the faculty may also list preferences. If you wish to teach one of these classes and meet the requirements,
+      you are strongly recommended to write to the faculty teaching the class about your interest, in advance of
+      filling out this form.
+    </div>
+
+    <div class="panel">
+      <h2>About you</h2>
+      <div class="row">
+        <div>
+          <label>NetID</label>
+          <input type="text" id="f_netid" readonly />
+        </div>
+        <div>
+          <label>Full name</label>
+          <input type="text" id="f_name" readonly />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Thesis advisor (name)</label>
+          <input type="text" id="f_advisor" placeholder="e.g. Lawrence Angrave" />
+        </div>
+        <div>
+          <label>Research area</label>
+          <select id="f_area">
+            <option value="">— Select —</option>
+            <option>AI</option><option>DAIS</option><option>Theory</option>
+            <option>Architecture</option><option>Systems</option><option>Security</option>
+            <option>Graphics</option><option>PL</option><option>SE</option>
+            <option>SciComp</option><option>Parallel</option><option>Bioinformatics</option>
+            <option>Robotics</option><option>General</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Program</label>
+          <input type="text" id="f_program" readonly />
+        </div>
+        <div>
+          <label>Eligible to TA (language exam passed if needed)?</label>
+          <select id="f_eligible">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+            <option value="exempt">Not required</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div id="phdRow">
+          <label>For PhD students: Within the 5-year funding guarantee?</label>
+          <select id="f_guarantee">
+            <option value="yes">Yes — within 5-year guarantee</option>
+            <option value="no">No — past 5-year guarantee</option>
+            <option value="na">N/A (MSc student)</option>
+          </select>
+        </div>
+        <div>
+          <label>Willing to take a 25% TAship?</label>
+          <select id="f_quarter">
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+      </div>
+      <label>Times you are <b>absolutely not available</b> (due to required courses):</label>
+      <textarea id="f_unavail" placeholder="e.g. MWF 9-10am (CS 591 seminar), Tu/Th 2-3:15pm (CS 421)"></textarea>
+
+      <label>Rate your C++ skills</label>
+      <div class="radio-group" id="cppRating">
+        <label><input type="radio" name="cpp" value="None" /> None</label>
+        <label><input type="radio" name="cpp" value="Minimal" /> Minimal</label>
+        <label><input type="radio" name="cpp" value="Basic" /> Basic</label>
+        <label><input type="radio" name="cpp" value="Good" /> Good</label>
+        <label><input type="radio" name="cpp" value="Very good" /> Very good</label>
+        <label><input type="radio" name="cpp" value="Excellent" /> Excellent</label>
+      </div>
+
+      <label>Classes you have already TA'd here at UIUC</label>
+      <textarea id="f_priorTA" placeholder="e.g. CS 225 (Fa23 w/ Mattox), CS 374 (Sp24 w/ Erickson)"></textarea>
+    </div>
+
+    <div class="panel">
+      <h2>Faculty preferences</h2>
+      <div class="row">
+        <div>
+          <label>Faculty you <b>want</b> to work with (ordered)</label>
+          <div class="row" style="align-items:flex-end">
+            <select id="prefFacSel" data-combobox></select>
+            <button class="btn secondary" id="addPrefFac" type="button" style="flex:0 0 auto">Add</button>
+          </div>
+          <div class="ordered-list" id="prefFacList"></div>
+        </div>
+        <div>
+          <label>Faculty you do <b>not</b> want to work with (ordered)</label>
+          <div class="row" style="align-items:flex-end">
+            <select id="avoidFacSel" data-combobox></select>
+            <button class="btn secondary" id="addAvoidFac" type="button" style="flex:0 0 auto">Add</button>
+          </div>
+          <div class="ordered-list" id="avoidFacList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Course preferences</h2>
+      <p class="muted">
+        Courses at the 400-level (marked <span class="req-tag">REQ</span>) have explicit requirements;
+        the default rank for those is <b>F</b>. For lower courses, the default rank is <b>C</b>.
+        Choose <b>A</b> (most desired), <b>B</b> (moderate), <b>C</b> (least preferred), or <b>F</b> (no background).
+      </p>
+
+      <div class="filters">
+        <input type="text" id="courseFilter" class="search-input" placeholder="Filter by course id or title..." />
+        <label><input type="checkbox" id="filter100" checked /> 100</label>
+        <label><input type="checkbox" id="filter200" checked /> 200</label>
+        <label><input type="checkbox" id="filter300" checked /> 300</label>
+        <label><input type="checkbox" id="filter400" checked /> 400</label>
+        <label><input type="checkbox" id="filterAB" /> Show only A/B</label>
+      </div>
+
+      <div style="overflow:auto; max-height:520px; border:1px solid var(--border);">
+        <table class="courses" id="coursesTable">
+          <thead><tr>
+            <th>Course</th><th>Title</th><th>Slots</th><th>Rank</th>
+            <th>Taken? <span class="small muted">(A/B only)</span></th>
+            <th>Prior TA?</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Top 5 (from your A-ranked courses)</h2>
+      <p class="muted">List your top 5 courses, in order. Selections must be courses you ranked as <b>A</b>.</p>
+      <div id="topFiveContainer"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Appointment percentage preference</h2>
+      <p class="muted">Default if not picked is option 1.</p>
+      <div class="radio-group">
+        <label><input type="radio" name="appt" value="50only" /> I would only accept a 50% appointment and not a 25%</label>
+        <label><input type="radio" name="appt" value="50pref" checked /> I prefer a 50% appointment but would accept a 25%</label>
+        <label><input type="radio" name="appt" value="25pref" /> I prefer a 25% appointment but would accept a 50%</label>
+        <label><input type="radio" name="appt" value="25only" /> I would only accept a 25% appointment, and not a 50%</label>
+      </div>
+    </div>
+
+    <div class="banner small">
+      <b>Note:</b> Your responses generate an ordered list of classes that can be fed into the
+      Stable Marriage matching algorithm. Saved data lives in your browser only (LocalStorage).
+    </div>
+
+    <div class="toolbar">
+      <button class="btn" id="saveBtn">Save my response</button>
+      <button class="btn ghost" id="loadBtn">Reload saved</button>
+      <span id="saveStatus" class="muted"></span>
+    </div>
+  </div>
+</main>
+<div id="app-footer"></div>
+
+<script src="app.js"></script>
+<script>
+let DATA = null;
+
+(async function() {
+  DATA = await loadAllData();
+  ensureSeededStudentResponses(DATA);
+  buildHeader('student', DATA);
+  buildFooter();
+
+  const user = getCurrentUser();
+  if (!user || user.role !== 'student') {
+    document.getElementById('noUser').style.display = 'block';
+    if (user && user.role === 'faculty') {
+      document.getElementById('noUser').innerHTML =
+        `You are acting as a faculty member. Switch to a student in the <b>Acting as</b> dropdown to use this form.`;
+    }
+    return;
+  }
+  document.getElementById('formArea').style.display = 'block';
+  initStudentForm(user);
+})();
+
+function initStudentForm(user) {
+  const me = DATA.students.find(s => s.netid === user.netid);
+  document.getElementById('f_netid').value = me.netid;
+  document.getElementById('f_name').value = me.name;
+  document.getElementById('f_program').value = `${me.program} (Year ${me.year})`;
+
+  // Pre-fill advisor/area from student record
+  const adv = DATA.faculty.find(f => f.netid === me.advisor);
+  document.getElementById('f_advisor').value = adv ? adv.name : '';
+  document.getElementById('f_area').value = me.area;
+  document.getElementById('f_guarantee').value =
+    me.program === 'MSc' ? 'na' : (me.year <= 5 ? 'yes' : 'no');
+
+  // Faculty dropdowns
+  const facSelHTML = `<option value="">— Select faculty —</option>` +
+    DATA.faculty.map(f => `<option value="${f.netid}">${f.name} (${f.netid})</option>`).join('');
+  document.getElementById('prefFacSel').innerHTML = facSelHTML;
+  document.getElementById('avoidFacSel').innerHTML = facSelHTML;
+  enhanceAllSelects();
+
+  // State
+  const state = {
+    prefFaculty: [],
+    avoidFaculty: [],
+    ranks: {}, // course_id -> A|B|C|F
+    taken: {}, // course_id -> {sem, prof, grade}
+    priorTA: {}, // course_id -> {sem, prof}
+    topFive: ['','','','',''],
+  };
+
+  // Load existing
+  const saved = getStudentResponses()[me.netid];
+  if (saved) Object.assign(state, saved.state || {});
+
+  function renderFacChips(target, list, warn=false) {
+    const el = document.getElementById(target);
+    el.innerHTML = list.length ? list.map((nid, idx) => {
+      const f = DATA.faculty.find(x => x.netid === nid);
+      return `<span class="chip ${warn?'warn':''}"><span class="num">${idx+1}</span> ${f?f.name:nid} <span class="x" data-nid="${nid}">×</span></span>`;
+    }).join('') : '<span class="muted small">None added.</span>';
+    el.querySelectorAll('.x').forEach(x => x.onclick = () => {
+      const i = list.indexOf(x.dataset.nid);
+      if (i >= 0) list.splice(i, 1);
+      renderFacChips(target, list, warn);
+    });
+  }
+  renderFacChips('prefFacList', state.prefFaculty);
+  renderFacChips('avoidFacList', state.avoidFaculty, true);
+
+  document.getElementById('addPrefFac').onclick = () => {
+    const v = document.getElementById('prefFacSel').value;
+    if (v && !state.prefFaculty.includes(v) && !state.avoidFaculty.includes(v)) {
+      state.prefFaculty.push(v);
+      renderFacChips('prefFacList', state.prefFaculty);
+    }
+  };
+  document.getElementById('addAvoidFac').onclick = () => {
+    const v = document.getElementById('avoidFacSel').value;
+    if (v && !state.avoidFaculty.includes(v) && !state.prefFaculty.includes(v)) {
+      state.avoidFaculty.push(v);
+      renderFacChips('avoidFacList', state.avoidFaculty, true);
+    }
+  };
+
+  // Courses table
+  const tbody = document.querySelector('#coursesTable tbody');
+  function defaultRank(c) {
+    return c.hasReqs ? 'F' : 'C';
+  }
+  function rankFor(c) {
+    return state.ranks[c.course_id] || defaultRank(c);
+  }
+  function renderRows() {
+    const filter = document.getElementById('courseFilter').value.toLowerCase();
+    const showLvl = {
+      100: document.getElementById('filter100').checked,
+      200: document.getElementById('filter200').checked,
+      300: document.getElementById('filter300').checked,
+      400: document.getElementById('filter400').checked,
+    };
+    const onlyAB = document.getElementById('filterAB').checked;
+    const filtered = DATA.courses.filter(c => {
+      if (!showLvl[c.level]) return false;
+      if (filter && !(`${c.course_id} ${c.title}`.toLowerCase().includes(filter))) return false;
+      if (onlyAB) {
+        const r = rankFor(c);
+        if (r !== 'A' && r !== 'B') return false;
+      }
+      return true;
+    });
+    tbody.innerHTML = filtered.map(c => {
+      const r = rankFor(c);
+      const taken = state.taken[c.course_id] || {};
+      const prior = state.priorTA[c.course_id] || {};
+      const needsDetails = (r === 'A' || r === 'B');
+      return `<tr data-cid="${c.course_id}">
+        <td><span class="${c.level>=400?'lvl-400':''}">${c.course_id}</span>${c.hasReqs?'<span class="req-tag">REQ</span>':''}</td>
+        <td>${c.title}</td>
+        <td>${c.slots}</td>
+        <td>
+          <div class="grade-cell">
+            ${['A','B','C','F'].map(g =>
+              `<label class="g-${g}"><input type="radio" name="rank-${c.course_id}" value="${g}" ${r===g?'checked':''}/><span>${g}</span></label>`
+            ).join('')}
+          </div>
+        </td>
+        <td>
+          ${needsDetails ? `
+            <label class="checkline"><input type="checkbox" class="took-cb" ${taken.took?'checked':''}/> Taken</label>
+            <div class="took-detail" style="display:${taken.took?'block':'none'}">
+              <input type="text" class="took-sem" placeholder="Sem" value="${taken.sem||''}" style="width:70px"/>
+              <input type="text" class="took-prof" placeholder="Prof" value="${taken.prof||''}" style="width:90px"/>
+              <input type="text" class="took-grade" placeholder="Grade" value="${taken.grade||''}" style="width:60px"/>
+            </div>` : '<span class="muted small">—</span>'}
+        </td>
+        <td>
+          ${needsDetails ? `
+            <label class="checkline"><input type="checkbox" class="ta-cb" ${prior.tad?'checked':''}/> Prior TA</label>
+            <div class="ta-detail" style="display:${prior.tad?'block':'none'}">
+              <input type="text" class="ta-sem" placeholder="Sem/Yr" value="${prior.sem||''}" style="width:80px"/>
+              <input type="text" class="ta-prof" placeholder="Prof" value="${prior.prof||''}" style="width:90px"/>
+            </div>` : '<span class="muted small">—</span>'}
+        </td>
+      </tr>`;
+    }).join('');
+    // Wire change events
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const cid = tr.dataset.cid;
+      tr.querySelectorAll(`input[name="rank-${cid}"]`).forEach(r => {
+        r.addEventListener('change', () => {
+          state.ranks[cid] = r.value;
+          renderRows();
+          renderTopFive();
+        });
+      });
+      const tookCb = tr.querySelector('.took-cb');
+      if (tookCb) tookCb.addEventListener('change', () => {
+        state.taken[cid] = state.taken[cid] || {};
+        state.taken[cid].took = tookCb.checked;
+        tr.querySelector('.took-detail').style.display = tookCb.checked ? 'block' : 'none';
+      });
+      ['sem','prof','grade'].forEach(k => {
+        const el = tr.querySelector('.took-'+k);
+        if (el) el.addEventListener('input', () => {
+          state.taken[cid] = state.taken[cid] || {};
+          state.taken[cid][k] = el.value;
+        });
+      });
+      const taCb = tr.querySelector('.ta-cb');
+      if (taCb) taCb.addEventListener('change', () => {
+        state.priorTA[cid] = state.priorTA[cid] || {};
+        state.priorTA[cid].tad = taCb.checked;
+        tr.querySelector('.ta-detail').style.display = taCb.checked ? 'block' : 'none';
+      });
+      ['sem','prof'].forEach(k => {
+        const el = tr.querySelector('.ta-'+k);
+        if (el) el.addEventListener('input', () => {
+          state.priorTA[cid] = state.priorTA[cid] || {};
+          state.priorTA[cid][k] = el.value;
+        });
+      });
+    });
+  }
+  ['courseFilter','filter100','filter200','filter300','filter400','filterAB'].forEach(id => {
+    document.getElementById(id).addEventListener('input', renderRows);
+    document.getElementById(id).addEventListener('change', renderRows);
+  });
+
+  // Top 5
+  function renderTopFive() {
+    const aCourses = DATA.courses.filter(c => state.ranks[c.course_id] === 'A');
+    const container = document.getElementById('topFiveContainer');
+    if (!aCourses.length) {
+      container.innerHTML = '<div class="muted small">Rank some courses as <b>A</b> to populate this list.</div>';
+      return;
+    }
+    container.innerHTML = state.topFive.map((sel, idx) => `
+      <div class="row" style="align-items:center; margin:4px 0">
+        <div style="flex:0 0 30px"><b>${idx+1}.</b></div>
+        <select data-idx="${idx}" class="topPick">
+          <option value="">— Select —</option>
+          ${aCourses.map(c => `<option value="${c.course_id}" ${sel===c.course_id?'selected':''}>${c.course_id} — ${c.title}</option>`).join('')}
+        </select>
+      </div>
+    `).join('');
+    container.querySelectorAll('.topPick').forEach(sel => {
+      sel.addEventListener('change', () => {
+        state.topFive[parseInt(sel.dataset.idx,10)] = sel.value;
+      });
+    });
+  }
+
+  renderRows();
+  renderTopFive();
+
+  // Restore form scalars
+  if (saved && saved.fields) {
+    const f = saved.fields;
+    if (f.area) document.getElementById('f_area').value = f.area;
+    if (f.eligible) document.getElementById('f_eligible').value = f.eligible;
+    if (f.guarantee) document.getElementById('f_guarantee').value = f.guarantee;
+    if (f.quarter) document.getElementById('f_quarter').value = f.quarter;
+    if (f.unavail) document.getElementById('f_unavail').value = f.unavail;
+    if (f.priorTAList) document.getElementById('f_priorTA').value = f.priorTAList;
+    if (f.cpp) {
+      const r = document.querySelector(`input[name="cpp"][value="${f.cpp}"]`);
+      if (r) r.checked = true;
+    }
+    if (f.appt) {
+      const r = document.querySelector(`input[name="appt"][value="${f.appt}"]`);
+      if (r) r.checked = true;
+    }
+  }
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    const fields = {
+      advisor: document.getElementById('f_advisor').value,
+      area: document.getElementById('f_area').value,
+      eligible: document.getElementById('f_eligible').value,
+      guarantee: document.getElementById('f_guarantee').value,
+      quarter: document.getElementById('f_quarter').value,
+      unavail: document.getElementById('f_unavail').value,
+      cpp: (document.querySelector('input[name="cpp"]:checked')||{}).value || '',
+      priorTAList: document.getElementById('f_priorTA').value,
+      appt: (document.querySelector('input[name="appt"]:checked')||{}).value || '50pref',
+    };
+    saveStudentResponse(me.netid, { fields, state });
+    const st = document.getElementById('saveStatus');
+    st.textContent = 'Saved ✓ ' + new Date().toLocaleTimeString();
+    st.style.color = 'var(--good)';
+  });
+  document.getElementById('loadBtn').addEventListener('click', () => location.reload());
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Instructor TA Request Form — Siebel School</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="app-header"></div>
+<main>
+  <h1>Instructor TA Request Form</h1>
+  <p class="muted">Fill out one form per class you are teaching in the coming year.</p>
+
+  <div id="noUser" class="banner" style="display:none">
+    Please choose a faculty member from the <b>Acting as</b> dropdown in the header to begin.
+  </div>
+
+  <div id="formArea" style="display:none">
+
+    <div class="instructions">
+      <b>Instructions:</b> Fill out one form for every class you are teaching in the coming year. Answer the
+      questions below, aiming to be as inclusive as possible about absolute requirements as well as preferences.
+      Please realize that MSc students and PhD students past year 5 are not guaranteed support; therefore, if your
+      requirements for TAship eliminate all students who are guaranteed support, it is possible you will not be
+      assigned a TA.
+    </div>
+    <div class="recommendations">
+      <b>Recommendations:</b> This questionnaire asks you to list students you prefer and students you do not wish
+      to have as TAs. Any student you do not list as either preferred or specifically not wanted will be considered
+      acceptable. We strongly recommend that you speak with students you list as preferred in advance, so they know
+      to also select your course as preferred.
+    </div>
+
+    <div class="panel">
+      <h2>About this class</h2>
+      <div class="row">
+        <div>
+          <label>Instructor</label>
+          <input type="text" id="i_name" readonly />
+        </div>
+        <div>
+          <label>NetID</label>
+          <input type="text" id="i_netid" readonly />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>Course you are teaching</label>
+          <select id="i_course" data-combobox></select>
+        </div>
+        <div>
+          <label>Research area for this course</label>
+          <select id="i_area">
+            <option value="">— Select —</option>
+            <option>AI</option><option>DAIS</option><option>Theory</option>
+            <option>Architecture</option><option>Systems</option><option>Security</option>
+            <option>Graphics</option><option>PL</option><option>SE</option>
+            <option>SciComp</option><option>Parallel</option><option>Bioinformatics</option>
+            <option>Robotics</option><option>General</option>
+          </select>
+        </div>
+      </div>
+      <label>Your thesis students (PhD or MSc) — netids, with optional notes</label>
+      <textarea id="i_thesis" placeholder="e.g. amelia2 (PhD Y3), oscarq2 (PhD Y2, admitted this year with TAship)"></textarea>
+    </div>
+
+    <div class="panel">
+      <h2>Preferred TAs</h2>
+      <p class="muted">Students you want to work with, in priority order. We will surface eligibility/priority info as you add students.</p>
+      <div class="row" style="align-items:flex-end">
+        <div>
+          <label>Add student</label>
+          <select id="prefStuSel" data-combobox></select>
+        </div>
+        <button class="btn secondary" id="addPrefStu" type="button" style="flex:0 0 auto">Add to preferred</button>
+      </div>
+      <div class="ordered-list" id="prefStuList"></div>
+
+      <h3>Backup preferences (if awarded only 25%)</h3>
+      <p class="muted small">Students you would want as 25% TAs and are willing to supplement with RA support.</p>
+      <div class="row" style="align-items:flex-end">
+        <div>
+          <label>Add student</label>
+          <select id="backupStuSel" data-combobox></select>
+        </div>
+        <button class="btn secondary" id="addBackupStu" type="button" style="flex:0 0 auto">Add to backup</button>
+      </div>
+      <div class="ordered-list" id="backupStuList"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Students you do not want to work with</h2>
+      <div class="row" style="align-items:flex-end">
+        <div>
+          <label>Add student</label>
+          <select id="avoidStuSel" data-combobox></select>
+        </div>
+        <button class="btn secondary" id="addAvoidStu" type="button" style="flex:0 0 auto">Add to avoid list</button>
+      </div>
+      <div class="ordered-list" id="avoidStuList"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Requirements &amp; preferences for this class</h2>
+      <p class="muted small">
+        For 400-level classes, please specify any specific skills required and what we would need to check
+        before assigning a student. Examples: took this course with grade ≥ A-, took one of [X,Y,Z] with grade ≥ B+,
+        PhD in particular research group, has TA'd this course before, GPU/NLP/parallel computing expertise,
+        availability for office hours / discussion sections.
+      </p>
+      <label>Hard requirements (must-have)</label>
+      <textarea id="i_reqs" placeholder="e.g. Must have taken CS 421 with grade >= A-. Must be available Tu/Th 2-3:15 for discussion."></textarea>
+
+      <label>Preferences (nice-to-have, not required)</label>
+      <textarea id="i_prefs" placeholder="e.g. Prior experience with LLVM. Has taken CS 426. Strong technical writing."></textarea>
+    </div>
+
+    <div class="panel">
+      <h2>Smart suggestions</h2>
+      <p class="muted small">Based on prior TAs, incoming students, and student responses on file.</p>
+      <div id="smartSuggestions"></div>
+    </div>
+
+    <div class="banner small">
+      Saved data lives in your browser only (LocalStorage). One submission per <i>(instructor, course)</i> pair.
+    </div>
+
+    <div class="toolbar">
+      <button class="btn" id="saveBtn">Save form for this course</button>
+      <button class="btn ghost" id="loadBtn">Reload saved</button>
+      <span id="saveStatus" class="muted"></span>
+    </div>
+  </div>
+</main>
+<div id="app-footer"></div>
+
+<script src="app.js"></script>
+<script>
+let DATA = null;
+
+(async function() {
+  DATA = await loadAllData();
+  ensureSeededStudentResponses(DATA);
+  buildHeader('instructor', DATA);
+  buildFooter();
+
+  const user = getCurrentUser();
+  if (!user || user.role !== 'faculty') {
+    document.getElementById('noUser').style.display = 'block';
+    if (user && user.role === 'student') {
+      document.getElementById('noUser').innerHTML =
+        `You are acting as a student. Switch to a faculty member in the <b>Acting as</b> dropdown to use this form.`;
+    }
+    return;
+  }
+  document.getElementById('formArea').style.display = 'block';
+  initInstructorForm(user);
+})();
+
+function studentLabel(s) {
+  const grad = s.program === 'PhD' ? `PhD Y${s.year}` : `MSc Y${s.year}`;
+  return `${s.name} — ${s.netid} (${grad}, ${s.area})`;
+}
+
+function initInstructorForm(user) {
+  const me = DATA.faculty.find(f => f.netid === user.netid);
+  document.getElementById('i_name').value = me.name;
+  document.getElementById('i_netid').value = me.netid;
+  document.getElementById('i_area').value = me.area;
+
+  // Course dropdown — exclude 0-slot courses
+  const courseSel = document.getElementById('i_course');
+  courseSel.innerHTML = `<option value="">— Select a course —</option>` +
+    DATA.courses.filter(c => c.slots > 0).map(c =>
+      `<option value="${c.course_id}">${c.course_id} — ${c.title} (${c.slots} slot${c.slots!==1?'s':''})</option>`
+    ).join('');
+
+  const stuOpts = `<option value="">— Select student —</option>` +
+    DATA.students.map(s => `<option value="${s.netid}">${studentLabel(s)}</option>`).join('');
+  ['prefStuSel','backupStuSel','avoidStuSel'].forEach(id => document.getElementById(id).innerHTML = stuOpts);
+  enhanceAllSelects();
+
+  const state = {
+    prefStudents: [],
+    backupStudents: [],
+    avoidStudents: [],
+  };
+  const fields = {
+    course_id: '',
+    area: me.area,
+    thesis: '',
+    reqs: '',
+    prefs: '',
+  };
+
+  function key() { return fields.course_id ? `${me.netid}::${fields.course_id}` : null; }
+
+  function loadForCourse() {
+    const k = key();
+    if (!k) return;
+    const all = getInstructorResponses();
+    const saved = all[k];
+    if (saved) {
+      Object.assign(fields, saved.fields || {});
+      Object.assign(state, saved.state || {});
+    } else {
+      state.prefStudents = [];
+      state.backupStudents = [];
+      state.avoidStudents = [];
+      fields.thesis = ''; fields.reqs = ''; fields.prefs = '';
+    }
+    document.getElementById('i_thesis').value = fields.thesis;
+    document.getElementById('i_reqs').value = fields.reqs;
+    document.getElementById('i_prefs').value = fields.prefs;
+    document.getElementById('i_area').value = fields.area || me.area;
+    renderAll();
+    renderSmart();
+  }
+
+  courseSel.addEventListener('change', () => {
+    fields.course_id = courseSel.value;
+    loadForCourse();
+  });
+
+  function chipFor(nid, warn=false, idx=null) {
+    const s = DATA.students.find(x => x.netid === nid);
+    let label = s ? `${s.name} (${nid})` : nid;
+    // Eligibility/priority indicators
+    let badges = '';
+    if (s) {
+      if (s.program === 'PhD' && s.year <= 5) badges += ' <span class="num" title="Within funding guarantee">★</span>';
+      if (s.program === 'PhD' && s.year > 5) badges += ' <span class="num" title="Past 5-year guarantee">!</span>';
+      if (s.program === 'MSc') badges += ' <span class="num" title="MSc — not guaranteed support">MSc</span>';
+    }
+    return `<span class="chip ${warn?'warn':''}">${idx!==null?`<span class="num">${idx+1}</span>`:''} ${label}${badges} <span class="x" data-nid="${nid}">×</span></span>`;
+  }
+  function renderList(targetId, arr, warn=false, ordered=true) {
+    const el = document.getElementById(targetId);
+    el.innerHTML = arr.length ? arr.map((n, i) => chipFor(n, warn, ordered?i:null)).join('')
+      : '<span class="muted small">None added.</span>';
+    el.querySelectorAll('.x').forEach(x => x.onclick = () => {
+      const i = arr.indexOf(x.dataset.nid);
+      if (i >= 0) arr.splice(i, 1);
+      renderAll();
+    });
+  }
+  function renderAll() {
+    renderList('prefStuList', state.prefStudents);
+    renderList('backupStuList', state.backupStudents);
+    renderList('avoidStuList', state.avoidStudents, true, false);
+  }
+
+  function addStudent(selId, arr) {
+    const v = document.getElementById(selId).value;
+    if (!v) return;
+    const inOther = [state.prefStudents, state.backupStudents, state.avoidStudents]
+      .filter(a => a !== arr).some(a => a.includes(v));
+    if (inOther) {
+      alert('That student is already in another list. Remove them first.');
+      return;
+    }
+    if (!arr.includes(v)) arr.push(v);
+    renderAll();
+  }
+  document.getElementById('addPrefStu').onclick = () => addStudent('prefStuSel', state.prefStudents);
+  document.getElementById('addBackupStu').onclick = () => addStudent('backupStuSel', state.backupStudents);
+  document.getElementById('addAvoidStu').onclick = () => addStudent('avoidStuSel', state.avoidStudents);
+
+  ['i_thesis','i_reqs','i_prefs','i_area'].forEach(id => {
+    document.getElementById(id).addEventListener('input', e => {
+      const k = id.replace('i_','');
+      if (k === 'thesis') fields.thesis = e.target.value;
+      else if (k === 'reqs') fields.reqs = e.target.value;
+      else if (k === 'prefs') fields.prefs = e.target.value;
+      else if (k === 'area') fields.area = e.target.value;
+    });
+  });
+
+  function renderSmart() {
+    const box = document.getElementById('smartSuggestions');
+    if (!fields.course_id) {
+      box.innerHTML = '<div class="muted small">Select a course to see suggestions.</div>';
+      return;
+    }
+    const course = DATA.courses.find(c => c.course_id === fields.course_id);
+    if (!course) { box.innerHTML = ''; return; }
+
+    // Suggested students: matching area, plus students who ranked this course A in their saved response
+    const sResp = getStudentResponses();
+    const interested = DATA.students.filter(s => {
+      const r = sResp[s.netid];
+      return r && r.state && r.state.ranks && r.state.ranks[fields.course_id] === 'A';
+    });
+    const areaMatch = DATA.students.filter(s => s.area === course.area).slice(0, 6);
+
+    let html = '';
+    if (interested.length) {
+      html += `<div class="smart-hints"><b>${interested.length}</b> student(s) ranked this course as <b>A</b> in their form:
+        ${interested.map(s => `<span class="chip">${s.name} (${s.netid})</span>`).join(' ')}</div>`;
+    }
+    if (areaMatch.length) {
+      html += `<div class="smart-hints">Students in research area <b>${course.area}</b>:
+        ${areaMatch.map(s => `<span class="chip">${s.name} (${s.netid})</span>`).join(' ')}</div>`;
+    }
+    // priority info for selected preferred students
+    if (state.prefStudents.length) {
+      const flagged = state.prefStudents.map(nid => DATA.students.find(s => s.netid === nid)).filter(Boolean);
+      const guaranteed = flagged.filter(s => s.program==='PhD' && s.year <= 5).length;
+      const past5 = flagged.filter(s => s.program==='PhD' && s.year > 5).length;
+      const ms = flagged.filter(s => s.program==='MSc').length;
+      html += `<div class="smart-hints">Among your preferred list: <b>${guaranteed}</b> within funding guarantee,
+        <b>${past5}</b> past year-5, <b>${ms}</b> MSc. (MSc &amp; past-5 students are not guaranteed support.)</div>`;
+    }
+    if (!html) html = '<div class="muted small">No suggestions yet for this course.</div>';
+    box.innerHTML = html;
+  }
+
+  // Re-render smart panel as prefs change
+  const obs = new MutationObserver(renderSmart);
+  obs.observe(document.getElementById('prefStuList'), { childList: true });
+
+  document.getElementById('saveBtn').addEventListener('click', () => {
+    if (!fields.course_id) {
+      alert('Pick a course first.');
+      return;
+    }
+    fields.thesis = document.getElementById('i_thesis').value;
+    fields.reqs = document.getElementById('i_reqs').value;
+    fields.prefs = document.getElementById('i_prefs').value;
+    fields.area = document.getElementById('i_area').value;
+    saveInstructorResponse(key(), {
+      instructor: me.netid,
+      course_id: fields.course_id,
+      fields,
+      state
+    });
+    const st = document.getElementById('saveStatus');
+    st.textContent = `Saved ${fields.course_id} ✓ ` + new Date().toLocaleTimeString();
+    st.style.color = 'var(--good)';
+  });
+  document.getElementById('loadBtn').addEventListener('click', () => location.reload());
+
+  renderAll();
+  renderSmart();
+}
+</script>
+</body>
+</html>

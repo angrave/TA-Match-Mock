@@ -157,10 +157,10 @@ function buildSeededStudentResponse(student, courses, faculty) {
       area: student.area,
       eligible,
       guarantee,
-      quarter: rng() < 0.7 ? 'yes' : 'no',
       unavail: pickOne(rng, unavailOptions),
       cpp: cppLevels[cppIdx],
       priorTAList: priorTAStr,
+      prevTA: Object.keys(priorTA).length > 0 || rng() < 0.25,
       appt: apptSel,
     },
     state: {
@@ -383,6 +383,7 @@ function buildHeader(activePage, data) {
           <a href="index.html" class="${activePage==='home'?'active':''}">Home</a>
           <a href="student.html" class="${activePage==='student'?'active':''}">Student Form</a>
           <a href="instructor.html" class="${activePage==='instructor'?'active':''}">Instructor Form</a>
+          <a href="assigner.html" class="${activePage==='assigner'?'active':''}">Assigner</a>
         </nav>
         <div class="user-switch">
           <span class="who">Acting as:</span>

@@ -342,16 +342,24 @@ table.courses tr:hover { background: #FFF6F2; }
   padding: 6px 10px;
   cursor: pointer;
   border-bottom: 1px solid #F0F0F0;
+  color: #111;
 }
 .combobox-item:hover,
 .combobox-item.active {
-  background: #FFF1EA;
+  background: var(--illinois-blue);
+  color: #fff;
 }
 .combobox-item mark {
   background: #FFE08A;
-  color: inherit;
-  padding: 0;
+  color: #111;
+  padding: 0 2px;
   font-weight: 700;
+  border-radius: 2px;
+}
+.combobox-item.active mark,
+.combobox-item:hover mark {
+  background: var(--illinois-orange);
+  color: #fff;
 }
 .combobox-empty {
   padding: 8px 10px;

@@ -83,14 +83,13 @@
             <option value="na">N/A (MSc student)</option>
           </select>
         </div>
-        <div>
-          <label>Willing to take a 25% TAship?</label>
-          <select id="f_quarter">
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </select>
-        </div>
       </div>
+      <p class="muted small">Set your <b>25% / 50% appointment preference</b> in the appointment-percentage section below — it captures all four options described in the requirements.</p>
+      <label class="checkline">
+        <input type="checkbox" id="f_prevTA" />
+        I have <b>previously held a TA appointment</b> at UIUC (used as a tiebreaker in later phases)
+      </label>
+
       <label>Times you are <b>absolutely not available</b> (due to required courses):</label>
       <textarea id="f_unavail" placeholder="e.g. MWF 9-10am (CS 591 seminar), Tu/Th 2-3:15pm (CS 421)"></textarea>
 
@@ -414,9 +413,9 @@ function initStudentForm(user) {
     if (f.area) document.getElementById('f_area').value = f.area;
     if (f.eligible) document.getElementById('f_eligible').value = f.eligible;
     if (f.guarantee) document.getElementById('f_guarantee').value = f.guarantee;
-    if (f.quarter) document.getElementById('f_quarter').value = f.quarter;
     if (f.unavail) document.getElementById('f_unavail').value = f.unavail;
     if (f.priorTAList) document.getElementById('f_priorTA').value = f.priorTAList;
+    if (typeof f.prevTA === 'boolean') document.getElementById('f_prevTA').checked = f.prevTA;
     if (f.cpp) {
       const r = document.querySelector(`input[name="cpp"][value="${f.cpp}"]`);
       if (r) r.checked = true;
@@ -433,10 +432,10 @@ function initStudentForm(user) {
       area: document.getElementById('f_area').value,
       eligible: document.getElementById('f_eligible').value,
       guarantee: document.getElementById('f_guarantee').value,
-      quarter: document.getElementById('f_quarter').value,
       unavail: document.getElementById('f_unavail').value,
       cpp: (document.querySelector('input[name="cpp"]:checked')||{}).value || '',
       priorTAList: document.getElementById('f_priorTA').value,
+      prevTA: document.getElementById('f_prevTA').checked,
       appt: (document.querySelector('input[name="appt"]:checked')||{}).value || '50pref',
     };
     saveStudentResponse(me.netid, { fields, state });

@@ -5,6 +5,37 @@
 <title>Student TA Preference Form — Siebel School</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="stylesheet" href="styles.css" />
+<style>
+.course-instr {
+  font-size: 0.8em;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.course-instr a {
+  color: var(--muted);
+  text-decoration: none;
+}
+.course-instr a:hover {
+  text-decoration: underline;
+}
+tr.course-main-row:hover td {
+  background: #f3f3f3;
+}
+tr.course-detail-row td {
+  background: #fafafa;
+  padding: 8px 12px 10px 32px;
+}
+.course-detail-content {
+  font-size: 0.88em;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.course-detail-content b {
+  color: var(--illinois-blue);
+}
+</style>
 </head>
 <body>
 <div id="app-header"></div>
@@ -107,28 +138,6 @@
     </div>
 
     <div class="panel">
-      <h2>Faculty preferences</h2>
-      <div class="row">
-        <div>
-          <label>Faculty you <b>want</b> to work with (ordered)</label>
-          <div class="row" style="align-items:flex-end">
-            <select id="prefFacSel" data-combobox></select>
-            <button class="btn secondary" id="addPrefFac" type="button" style="flex:0 0 auto">Add</button>
-          </div>
-          <div class="ordered-list" id="prefFacList"></div>
-        </div>
-        <div>
-          <label>Faculty you do <b>not</b> want to work with (ordered)</label>
-          <div class="row" style="align-items:flex-end">
-            <select id="avoidFacSel" data-combobox></select>
-            <button class="btn secondary" id="addAvoidFac" type="button" style="flex:0 0 auto">Add</button>
-          </div>
-          <div class="ordered-list" id="avoidFacList"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
       <h2>Course preferences</h2>
       <p class="muted">
         Courses at the 400-level (marked <span class="req-tag">REQ</span>) have explicit requirements;
@@ -148,7 +157,7 @@
       <div style="overflow:auto; max-height:520px; border:1px solid var(--border);">
         <table class="courses" id="coursesTable">
           <thead><tr>
-            <th>Course</th><th>Title</th><th>Slots</th><th>Rank</th>
+            <th>Course</th><th>Title / Instructor <span class="small muted">(click row for requirements)</span></th><th>Slots</th><th>Rank</th>
             <th>Taken? <span class="small muted">(A/B only)</span></th>
             <th>Prior TA?</th>
           </tr></thead>
@@ -174,6 +183,16 @@
       </div>
     </div>
 
+    <div class="panel">
+      <h2>Faculty to avoid</h2>
+      <label>Faculty you do <b>not</b> want to work with (ordered)</label>
+      <div class="row" style="align-items:flex-end">
+        <select id="avoidFacSel" data-combobox></select>
+        <button class="btn secondary" id="addAvoidFac" type="button" style="flex:0 0 auto">Add</button>
+      </div>
+      <div class="ordered-list" id="avoidFacList"></div>
+    </div>
+
     <div class="banner small">
       <b>Note:</b> Your responses generate an ordered list of classes that can be fed into the
       Stable Marriage matching algorithm. Saved data lives in your browser only (LocalStorage).
@@ -195,6 +214,7 @@ let DATA = null;
 (async function() {
   DATA = await loadAllData();
   ensureSeededStudentResponses(DATA);
+  ensureSeededInstructorResponses(DATA);
   buildHeader('student', DATA);
   buildFooter();
 
@@ -226,7 +246,6 @@ function initStudentForm(user) {
   // Faculty dropdowns
   const facSelHTML = `<option value="">— Select faculty —</option>` +
     DATA.faculty.map(f => `<option value="${f.netid}">${f.name} (${f.netid})</option>`).join('');
-  document.getElementById('prefFacSel').innerHTML = facSelHTML;
   document.getElementById('avoidFacSel').innerHTML = facSelHTML;
   enhanceAllSelects();
 
@@ -256,19 +275,11 @@ function initStudentForm(user) {
       renderFacChips(target, list, warn);
     });
   }
-  renderFacChips('prefFacList', state.prefFaculty);
   renderFacChips('avoidFacList', state.avoidFaculty, true);
 
-  document.getElementById('addPrefFac').onclick = () => {
-    const v = document.getElementById('prefFacSel').value;
-    if (v && !state.prefFaculty.includes(v) && !state.avoidFaculty.includes(v)) {
-      state.prefFaculty.push(v);
-      renderFacChips('prefFacList', state.prefFaculty);
-    }
-  };
   document.getElementById('addAvoidFac').onclick = () => {
     const v = document.getElementById('avoidFacSel').value;
-    if (v && !state.avoidFaculty.includes(v) && !state.prefFaculty.includes(v)) {
+    if (v && !state.avoidFaculty.includes(v)) {
       state.avoidFaculty.push(v);
       renderFacChips('avoidFacList', state.avoidFaculty, true);
     }
@@ -282,7 +293,27 @@ function initStudentForm(user) {
   function rankFor(c) {
     return state.ranks[c.course_id] || defaultRank(c);
   }
+
+  // Build instructor lookup: course_id -> {name, email, reqs, prefs}
+  function buildInstrLookup() {
+    const instrResponses = getInstructorResponses();
+    const lookup = {};
+    for (const [key, resp] of Object.entries(instrResponses)) {
+      const cid = resp.course_id || (key.split('::')[1]);
+      const instrNetid = resp.instructor || (key.split('::')[0]);
+      const fac = DATA.faculty.find(f => f.netid === instrNetid);
+      lookup[cid] = {
+        name: fac ? fac.name : instrNetid,
+        email: `${instrNetid}@illinois.edu`,
+        reqs: (resp.fields && resp.fields.reqs) || '',
+        prefs: (resp.fields && resp.fields.prefs) || '',
+      };
+    }
+    return lookup;
+  }
+
   function renderRows() {
+    const instrLookup = buildInstrLookup();
     const filter = document.getElementById('courseFilter').value.toLowerCase();
     const showLvl = {
       100: document.getElementById('filter100').checked,
@@ -306,9 +337,26 @@ function initStudentForm(user) {
       const taken = state.taken[c.course_id] || {};
       const prior = state.priorTA[c.course_id] || {};
       const needsDetails = (r === 'A' || r === 'B');
-      return `<tr data-cid="${c.course_id}">
+      const instr = instrLookup[c.course_id];
+      const instrHTML = instr
+        ? `<div class="course-instr">${instr.name} &middot; <a href="mailto:${instr.email}" onclick="event.stopPropagation()">${instr.email}</a></div>`
+        : '';
+      const hasReqsInfo = instr && (instr.reqs || instr.prefs);
+      const detailHTML = hasReqsInfo ? `
+        <tr class="course-detail-row" data-cid="${c.course_id}" style="display:none">
+          <td colspan="6">
+            <div class="course-detail-content">
+              ${instr.reqs ? `<div><b>Requirements:</b> ${instr.reqs}</div>` : ''}
+              ${instr.prefs ? `<div><b>Preferred:</b> ${instr.prefs}</div>` : ''}
+            </div>
+          </td>
+        </tr>` : '';
+      return `<tr class="course-main-row" data-cid="${c.course_id}"${hasReqsInfo ? ' style="cursor:pointer"' : ''}>
         <td><span class="${c.level>=400?'lvl-400':''}">${c.course_id}</span>${c.hasReqs?'<span class="req-tag">REQ</span>':''}</td>
-        <td>${c.title}</td>
+        <td>
+          <div>${c.title}</div>
+          ${instrHTML}
+        </td>
         <td>${c.slots}</td>
         <td>
           <div class="grade-cell">
@@ -334,10 +382,21 @@ function initStudentForm(user) {
               <input type="text" class="ta-prof" placeholder="Prof" value="${prior.prof||''}" style="width:90px"/>
             </div>` : '<span class="muted small">—</span>'}
         </td>
-      </tr>`;
+      </tr>${detailHTML}`;
     }).join('');
+    // Wire click-to-toggle detail rows
+    tbody.querySelectorAll('tr.course-main-row').forEach(tr => {
+      const cid = tr.dataset.cid;
+      const detailRow = tbody.querySelector(`tr.course-detail-row[data-cid="${cid}"]`);
+      if (detailRow) {
+        tr.addEventListener('click', e => {
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL' || e.target.tagName === 'A') return;
+          detailRow.style.display = detailRow.style.display === 'none' ? '' : 'none';
+        });
+      }
+    });
     // Wire change events
-    tbody.querySelectorAll('tr').forEach(tr => {
+    tbody.querySelectorAll('tr.course-main-row').forEach(tr => {
       const cid = tr.dataset.cid;
       tr.querySelectorAll(`input[name="rank-${cid}"]`).forEach(r => {
         r.addEventListener('change', () => {

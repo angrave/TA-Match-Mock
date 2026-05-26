@@ -1,83 +1,83 @@
-course_id	title	level	slots	area
-CS100	Computer Science Orientation	100	1	General
-CS101	Intro Computing: Engrg & Sci	100	6	General
-CS105	Intro Computing: Non-Tech	100	5	General
-CS107	Data Science Discovery	100	6	DAIS
-CS124	Introduction to Computer Science I	100	6	General
-CS128	Introduction to Computer Science II	100	6	General
-CS173	Discrete Structures	100	5	Theory
-CS199	Undergraduate Open Seminar	100	0	General
-CS210	Ethical & Professional Issues	200	3	General
-CS211	Ethical and Professional Conduct	200	3	General
-CS222	Software Design Lab	200	4	SE
-CS225	Data Structures	200	6	General
-CS233	Computer Architecture	200	5	Architecture
-CS277	Algorithms and Data Structures for Data Science	200	4	DAIS
-CS307	Modeling and Learning in Data Science	300	4	DAIS
-CS340	Introduction to Computer Systems	300	5	Systems
-CS341	System Programming	300	4	Systems
-CS357	Numerical Methods I	300	3	SciComp
-CS361	Probability & Statistics for CS	300	4	Theory
-CS374	Introduction to Algorithms & Models of Computation	300	6	Theory
-CS397	Individual Study	300	0	General
-CS400	Accelerated Fundamentals of Computing I	400	1	General
-CS401	Accelerated Fundamentals of Algorithms I	400	1	Theory
-CS407	Cryptography	400	1	Security
-CS409	The Art of Web Programming	400	1	SE
-CS410	Text Information Systems	400	1	DAIS
-CS411	Database Systems	400	1	DAIS
-CS412	Introduction to Data Mining	400	1	DAIS
-CS413	Intro to Combinatorics	400	0	Theory
-CS415	Game Development	400	1	Graphics
-CS417	Introduction to Extended Reality	400	1	Graphics
-CS418	Interactive Computer Graphics	400	1	Graphics
-CS421	Programming Languages & Compilers	400	1	PL
-CS422	Programming Language Design	400	1	PL
-CS423	Operating Systems Design	400	1	Systems
-CS424	Real-Time Systems	400	0	Systems
-CS425	Distributed Systems	400	1	Systems
-CS426	Compiler Construction	400	1	PL
-CS427	Software Engineering I	400	1	SE
-CS433	Computer System Organization	400	1	Architecture
-CS434	Real World Algorithms for IoT and Data Science	400	0	Systems
-CS437	Topics in Internet of Things	400	1	Systems
-CS438	Computer Networks	400	1	Systems
-CS439	Wireless Networks	400	0	Systems
-CS440	Artificial Intelligence	400	1	AI
-CS441	Applied Machine Learning	400	1	AI
-CS444	Deep Learning for Computer Vision	400	1	AI
-CS445	Computational Photography	400	1	Graphics
-CS446	Machine Learning	400	1	AI
-CS447	Natural Language Processing	400	1	AI
-CS450	Numerical Analysis	400	1	SciComp
-CS452	Topics in Robotics	400	1	Robotics
-CS460	Security Laboratory	400	1	Security
-CS461	Computer Security I	400	1	Security
-CS462	Issues of Law and Policy in CS	400	0	General
-CS463	Computer Security II	400	1	Security
-CS464	Societal and Ethical Impacts of Computer Technology	400	0	General
-CS466	Introduction to Bioinformatics	400	1	Bioinformatics
-CS468	Tech and Advertising Campaigns	400	0	General
-CS470	Social and Information Networks	400	1	DAIS
-CS473	Algorithms	400	1	Theory
-CS475	Formal Models of Computation	400	0	Theory
-CS477	Formal Software Development Methods	400	0	SE
-CS481	Advanced Topics in Stochastic Processes & Applications	400	0	Theory
-CS483	Applied Parallel Programming	400	1	Parallel
-CS484	Parallel Programming	400	1	Parallel
-CS491	Seminar	400	0	General
-CS492	Senior Project I	400	1	SE
-CS497	CS Team Project	400	1	SE
-CS498-AI	Special Topics: Ethics of AI	400	1	AI
-CS498-BD	Special Topics: Big Data Analytics	400	1	DAIS
-CS498-CG	Special Topics: Advanced Computer Graphics	400	1	Graphics
-CS498-CL	Special Topics: Cloud Computing	400	1	Systems
-CS498-IT	Special Topics: IoT Security	400	1	Security
-CS498-ML	Special Topics: ML Systems	400	1	AI
-CS498-QC	Special Topics: Quantum Computing	400	1	Theory
-CS498-RK	Special Topics: Robotics for Kids	400	1	Robotics
-CS498-VR	Special Topics: Virtual Reality	400	1	Graphics
-CS498-AC	Special Topics: Applied Cryptography	400	1	Security
-CS498-DS	Special Topics: Data Science Practicum	400	1	DAIS
-CS498-HC	Special Topics: Human-Computer Interaction	400	1	Graphics
-CS499	Senior Thesis	400	0	General
+course_id	title	level	slots	area	allocTA
+CS100	Computer Science Orientation	100	1	General	yes
+CS101	Intro Computing: Engrg & Sci	100	6	General	yes
+CS105	Intro Computing: Non-Tech	100	5	General	yes
+CS107	Data Science Discovery	100	6	DAIS	yes
+CS124	Introduction to Computer Science I	100	0	General	yes
+CS128	Introduction to Computer Science II	100	6	General	yes
+CS173	Discrete Structures	100	5	Theory	yes
+CS199	Undergraduate Open Seminar	100	0	General	yes
+CS210	Ethical & Professional Issues	200	3	General	yes
+CS211	Ethical and Professional Conduct	200	3	General	yes
+CS222	Software Design Lab	200	4	SE	yes
+CS225	Data Structures	200	6	General	yes
+CS233	Computer Architecture	200	5	Architecture	yes
+CS277	Algorithms and Data Structures for Data Science	200	4	DAIS	yes
+CS307	Modeling and Learning in Data Science	300	4	DAIS	yes
+CS340	Introduction to Computer Systems	300	5	Systems	yes
+CS341	System Programming	300	4	Systems	yes
+CS357	Numerical Methods I	300	3	SciComp	yes
+CS361	Probability & Statistics for CS	300	4	Theory	yes
+CS374	Introduction to Algorithms & Models of Computation	300	6	Theory	yes
+CS397	Individual Study	300	0	General	no
+CS400	Accelerated Fundamentals of Computing I	400	1	General	yes
+CS401	Accelerated Fundamentals of Algorithms I	400	1	Theory	yes
+CS407	Cryptography	400	1	Security	yes
+CS409	The Art of Web Programming	400	1	SE	yes
+CS410	Text Information Systems	400	1	DAIS	yes
+CS411	Database Systems	400	1	DAIS	yes
+CS412	Introduction to Data Mining	400	1	DAIS	yes
+CS413	Intro to Combinatorics	400	0	Theory	yes
+CS415	Game Development	400	1	Graphics	yes
+CS417	Introduction to Extended Reality	400	1	Graphics	yes
+CS418	Interactive Computer Graphics	400	1	Graphics	yes
+CS421	Programming Languages & Compilers	400	1	PL	yes
+CS422	Programming Language Design	400	1	PL	yes
+CS423	Operating Systems Design	400	1	Systems	yes
+CS424	Real-Time Systems	400	0	Systems	yes
+CS425	Distributed Systems	400	1	Systems	yes
+CS426	Compiler Construction	400	1	PL	yes
+CS427	Software Engineering I	400	1	SE	yes
+CS433	Computer System Organization	400	1	Architecture	yes
+CS434	Real World Algorithms for IoT and Data Science	400	0	Systems	yes
+CS437	Topics in Internet of Things	400	1	Systems	yes
+CS438	Computer Networks	400	1	Systems	yes
+CS439	Wireless Networks	400	0	Systems	yes
+CS440	Artificial Intelligence	400	1	AI	yes
+CS441	Applied Machine Learning	400	1	AI	yes
+CS444	Deep Learning for Computer Vision	400	1	AI	yes
+CS445	Computational Photography	400	1	Graphics	yes
+CS446	Machine Learning	400	1	AI	yes
+CS447	Natural Language Processing	400	1	AI	yes
+CS450	Numerical Analysis	400	1	SciComp	yes
+CS452	Topics in Robotics	400	1	Robotics	yes
+CS460	Security Laboratory	400	1	Security	yes
+CS461	Computer Security I	400	1	Security	yes
+CS462	Issues of Law and Policy in CS	400	0	General	yes
+CS463	Computer Security II	400	1	Security	yes
+CS464	Societal and Ethical Impacts of Computer Technology	400	0	General	yes
+CS466	Introduction to Bioinformatics	400	1	Bioinformatics	yes
+CS468	Tech and Advertising Campaigns	400	0	General	yes
+CS470	Social and Information Networks	400	1	DAIS	yes
+CS473	Algorithms	400	1	Theory	yes
+CS475	Formal Models of Computation	400	0	Theory	yes
+CS477	Formal Software Development Methods	400	0	SE	yes
+CS481	Advanced Topics in Stochastic Processes & Applications	400	0	Theory	yes
+CS483	Applied Parallel Programming	400	1	Parallel	yes
+CS484	Parallel Programming	400	1	Parallel	yes
+CS491	Seminar	400	0	General	yes
+CS492	Senior Project I	400	1	SE	yes
+CS497	CS Team Project	400	1	SE	yes
+CS498-AI	Special Topics: Ethics of AI	400	1	AI	yes
+CS498-BD	Special Topics: Big Data Analytics	400	1	DAIS	yes
+CS498-CG	Special Topics: Advanced Computer Graphics	400	1	Graphics	yes
+CS498-CL	Special Topics: Cloud Computing	400	1	Systems	yes
+CS498-IT	Special Topics: IoT Security	400	1	Security	yes
+CS498-ML	Special Topics: ML Systems	400	1	AI	yes
+CS498-QC	Special Topics: Quantum Computing	400	1	Theory	yes
+CS498-RK	Special Topics: Robotics for Kids	400	1	Robotics	yes
+CS498-VR	Special Topics: Virtual Reality	400	1	Graphics	yes
+CS498-AC	Special Topics: Applied Cryptography	400	1	Security	yes
+CS498-DS	Special Topics: Data Science Practicum	400	1	DAIS	yes
+CS498-HC	Special Topics: Human-Computer Interaction	400	1	Graphics	yes
+CS499	Senior Thesis	400	0	General	no

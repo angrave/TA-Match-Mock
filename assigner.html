@@ -172,6 +172,7 @@ function phaseTierAllowed(phase) {
   return new Set([0, 1, 2]);
 }
 function quotaForPhase(c, phase) {
+  if (c.allocTA !== 'yes') return 0;
   return phase >= 4 ? fullQuota(c) : initialQuota(c);
 }
 
@@ -363,8 +364,8 @@ function renderAll() {
   const iResp = getInstructorResponses();
   document.getElementById('stStudents').textContent = Object.keys(sResp).length;
   document.getElementById('stCourses').textContent = Object.keys(iResp).length;
-  document.getElementById('stSetA').textContent = DATA.courses.filter(c => isSetA(c) && c.slots > 0).length;
-  document.getElementById('stSetB').textContent = DATA.courses.filter(c => !isSetA(c) && c.slots > 0).length;
+  document.getElementById('stSetA').textContent = DATA.courses.filter(c => isSetA(c) && c.slots > 0 && c.allocTA === 'yes').length;
+  document.getElementById('stSetB').textContent = DATA.courses.filter(c => !isSetA(c) && c.slots > 0 && c.allocTA === 'yes').length;
 
   // Phase cards
   [2,3,4].forEach(p => {
@@ -465,7 +466,7 @@ function runNextPhase() {
   // Unfilled Set A intervention check (Phase 2)
   if (p === 2) {
     const setAUnfilled = DATA.courses.filter(c =>
-      isSetA(c) && c.slots > 0 && STATE.assignments[c.course_id].length < initialQuota(c));
+      isSetA(c) && c.slots > 0 && c.allocTA === 'yes' && STATE.assignments[c.course_id].length < initialQuota(c));
     if (setAUnfilled.length) {
       logLine(`<span class="warn">⚠ ${setAUnfilled.length} Set A course(s) unfilled — per PROCESS.md this signals "intervention may be needed":</span>`);
       setAUnfilled.slice(0, 10).forEach(c => {
@@ -491,7 +492,7 @@ function autoFillInstructorForms() {
   const sResp = getStudentResponses();
   let added = 0;
   DATA.courses.forEach(c => {
-    if (c.slots <= 0) return;
+    if (c.slots <= 0 || c.allocTA !== 'yes') return;
     // Already have a form for this course? (any instructor)
     const hasForm = Object.values(iResp).some(r => r.course_id === c.course_id);
     if (hasForm) return;
@@ -533,7 +534,7 @@ function downloadXlsx() {
   const goal = c => STATE.phase >= 4 ? fullQuota(c) : initialQuota(c);
 
   // Sheet 1: Assignments (one row per course)
-  const assignRows = DATA.courses.filter(c => c.slots > 0).map(c => {
+  const assignRows = DATA.courses.filter(c => c.slots > 0 && c.allocTA === 'yes').map(c => {
     const matched = STATE.assignments[c.course_id] || [];
     const names = matched.map(nid => {
       const s = studentByNetid[nid];
@@ -596,9 +597,9 @@ function downloadXlsx() {
   const summaryRows = [
     { Metric: 'Phase reached', Value: STATE.phase },
     { Metric: 'Total students assigned', Value: totalAssigned },
-    { Metric: 'Courses with slots', Value: DATA.courses.filter(c => c.slots > 0).length },
-    { Metric: 'Courses fully filled', Value: DATA.courses.filter(c => c.slots > 0 && (STATE.assignments[c.course_id] || []).length >= goal(c)).length },
-    { Metric: 'Courses unfilled', Value: DATA.courses.filter(c => c.slots > 0 && (STATE.assignments[c.course_id] || []).length === 0).length },
+    { Metric: 'Courses with slots', Value: DATA.courses.filter(c => c.slots > 0 && c.allocTA === 'yes').length },
+    { Metric: 'Courses fully filled', Value: DATA.courses.filter(c => c.slots > 0 && c.allocTA === 'yes' && (STATE.assignments[c.course_id] || []).length >= goal(c)).length },
+    { Metric: 'Courses unfilled', Value: DATA.courses.filter(c => c.slots > 0 && c.allocTA === 'yes' && (STATE.assignments[c.course_id] || []).length === 0).length },
     { Metric: 'Unmatched eligible students', Value: unmatchedRows.length },
     { Metric: 'Exported at', Value: new Date().toLocaleString() }
   ];

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Course Admin — TA Matching</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+  table.courses { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.courses th, table.courses td { padding: 6px 8px; border-bottom: 1px solid #eee; text-align: left; vertical-align: middle; }
+  table.courses thead th { background: #f5f5f5; position: sticky; top: 0; }
+  table.courses input[type=number] { width: 70px; padding: 4px; }
+  .alloc-yes { color: #1a7a36; font-weight: 600; }
+  .alloc-no  { color: #999; }
+  .locked    { color: #999; font-style: italic; font-size: 12px; }
+  tr.dim td { background: #fafafa; color: #888; }
+</style>
+</head>
+<body>
+<div id="app-header"></div>
+<main>
+  <h1>Course Admin</h1>
+  <p class="muted">View all courses, adjust the number of TA slots, and toggle whether each course is offered to faculty and students for TA allocation. Courses with <b>allocTA = no</b> are hidden from the student preference form, the instructor form, and the matching assigner.</p>
+
+  <div class="panel">
+    <div class="toolbar">
+      <label><input type="checkbox" id="filterAlloc"/> Only courses with allocTA = yes</label>
+      <input type="text" id="searchBox" placeholder="Search by id or title…" style="flex:1; min-width:200px; padding:4px 8px"/>
+      <button class="btn ghost" id="resetBtn" title="Discard all local edits and revert to TSV defaults">Reset local overrides</button>
+    </div>
+    <div class="muted small" id="overrideNote"></div>
+    <table class="courses" id="courseTable">
+      <thead>
+        <tr>
+          <th>Course</th>
+          <th>Title</th>
+          <th>Level</th>
+          <th>Area</th>
+          <th>Slots</th>
+          <th>allocTA</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</main>
+<div id="app-footer"></div>
+
+<script src="app.js"></script>
+<script>
+(async function() {
+  const DATA = await loadAllData();
+  buildHeader('course', DATA);
+  buildFooter();
+
+  const tbody = document.querySelector('#courseTable tbody');
+  const searchEl = document.getElementById('searchBox');
+  const filterAlloc = document.getElementById('filterAlloc');
+  const note = document.getElementById('overrideNote');
+
+  function updateNote() {
+    const ov = getCourseOverrides();
+    const n = Object.keys(ov).length;
+    note.textContent = n ? `${n} course(s) have local overrides applied.` : 'No local overrides — values reflect courses.tsv defaults.';
+  }
+
+  function render() {
+    const q = searchEl.value.trim().toLowerCase();
+    const onlyAlloc = filterAlloc.checked;
+    const rows = DATA.courses.filter(c => {
+      if (onlyAlloc && c.allocTA !== 'yes') return false;
+      if (q && !(`${c.course_id} ${c.title}`.toLowerCase().includes(q))) return false;
+      return true;
+    });
+
+    tbody.innerHTML = rows.map(c => {
+      const locked = policyDisallowsTA(c);
+      const dim = c.allocTA !== 'yes' ? 'dim' : '';
+      return `<tr class="${dim}" data-cid="${c.course_id}">
+        <td><b>${c.course_id}</b></td>
+        <td>${c.title}</td>
+        <td>${c.level}</td>
+        <td>${c.area}</td>
+        <td><input type="number" min="0" max="20" class="slots-inp" value="${c.slots}" ${locked ? 'disabled' : ''}/></td>
+        <td>
+          ${locked
+            ? `<span class="alloc-no">no</span> <span class="locked">(policy-locked)</span>`
+            : `<select class="alloc-sel">
+                <option value="yes" ${c.allocTA==='yes'?'selected':''}>yes</option>
+                <option value="no"  ${c.allocTA==='no' ?'selected':''}>no</option>
+               </select>`}
+        </td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="6" class="muted">No matching courses.</td></tr>`;
+
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const cid = tr.dataset.cid;
+      if (!cid) return;
+      const slotsInp = tr.querySelector('.slots-inp');
+      if (slotsInp) {
+        slotsInp.addEventListener('change', () => {
+          const v = parseInt(slotsInp.value, 10);
+          if (Number.isNaN(v) || v < 0) { slotsInp.value = 0; return; }
+          saveCourseOverride(cid, { slots: v });
+          const c = DATA.courses.find(x => x.course_id === cid);
+          if (c) c.slots = v;
+          updateNote();
+        });
+      }
+      const allocSel = tr.querySelector('.alloc-sel');
+      if (allocSel) {
+        allocSel.addEventListener('change', () => {
+          saveCourseOverride(cid, { allocTA: allocSel.value });
+          const c = DATA.courses.find(x => x.course_id === cid);
+          if (c) c.allocTA = allocSel.value;
+          updateNote();
+          render();
+        });
+      }
+    });
+  }
+
+  searchEl.addEventListener('input', render);
+  filterAlloc.addEventListener('change', render);
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (!confirm('Discard all local slot and allocTA overrides? This reverts to courses.tsv defaults.')) return;
+    clearCourseOverrides();
+    location.reload();
+  });
+
+  updateNote();
+  render();
+})();
+</script>
+</body>
+</html>

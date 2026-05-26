@@ -28,6 +28,11 @@
       <a class="btn secondary" href="instructor.html">Open Instructor Form &rarr;</a>
     </div>
     <div class="card">
+      <h2>Course Admin</h2>
+      <p>View all courses, set the number of TA slots, and toggle whether each course is allocated a TA at all.</p>
+      <a class="btn secondary" href="course.html">Open Course Admin &rarr;</a>
+    </div>
+    <div class="card">
       <h2>Assigner (admin view)</h2>
       <p>Run the multi-phase matching described in <code>PROCESS.md</code>. Course-proposing stable marriage with per-phase eligibility and quota changes.</p>
       <a class="btn secondary" href="assigner.html">Open Assigner &rarr;</a>
@@ -97,6 +102,7 @@
     if (confirm('Clear all locally-stored TA matching data? This cannot be undone.')) {
       localStorage.removeItem(LS_KEYS.STUDENT_RESPONSES);
       localStorage.removeItem(LS_KEYS.INSTRUCTOR_RESPONSES);
+      localStorage.removeItem(LS_KEYS.COURSE_OVERRIDES);
       location.reload();
     }
   });

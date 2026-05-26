@@ -5,7 +5,17 @@ const LS_KEYS = {
   CURRENT_USER: 'taa.currentUser',
   STUDENT_RESPONSES: 'taa.studentResponses', // map netid -> response obj
   INSTRUCTOR_RESPONSES: 'taa.instructorResponses', // map courseId -> response obj
+  COURSE_OVERRIDES: 'taa.courseOverrides', // map courseId -> { slots?, allocTA? }
 };
+
+// Courses that by policy never get a TA, regardless of the TSV default.
+// Senior Thesis, 500-level, Independent Study (397/498/499), and CS124.
+function policyDisallowsTA(c) {
+  if (c.level >= 500) return true;
+  const id = c.course_id;
+  if (id === 'CS397' || id === 'CS499' || id === 'CS498') return true;
+  return false;
+}
 
 async function loadTSV(path) {
   const r = await fetch(path);
@@ -26,11 +36,22 @@ async function loadAllData() {
     loadTSV('faculty.tsv'),
     loadTSV('students.tsv')
   ]);
-  // normalize numeric
+  // normalize numeric + apply allocTA defaults and admin overrides
+  const overrides = getCourseOverrides();
   courses.forEach(c => {
     c.level = parseInt(c.level, 10);
     c.slots = parseInt(c.slots, 10);
     c.hasReqs = c.level >= 400; // 400+ have explicit requirements
+    // allocTA: TSV value, then policy override, then admin override
+    if (c.allocTA !== 'yes' && c.allocTA !== 'no') {
+      c.allocTA = policyDisallowsTA(c) ? 'no' : 'yes';
+    }
+    if (policyDisallowsTA(c)) c.allocTA = 'no';
+    const ov = overrides[c.course_id];
+    if (ov) {
+      if (typeof ov.slots === 'number' && !Number.isNaN(ov.slots)) c.slots = ov.slots;
+      if ((ov.allocTA === 'yes' || ov.allocTA === 'no') && !policyDisallowsTA(c)) c.allocTA = ov.allocTA;
+    }
   });
   students.forEach(s => {
     s.year = parseInt(s.year, 10);
@@ -93,6 +114,7 @@ function buildSeededStudentResponse(student, courses, faculty) {
   const priorTA = {};
   const aList = [];
   courses.forEach(c => {
+    if (c.allocTA !== 'yes') return;
     const areaMatch = c.area === student.area;
     const r = rng();
     let grade;
@@ -216,6 +238,19 @@ function saveStudentResponse(netid, data) {
   const all = getStudentResponses();
   all[netid] = { ...data, updatedAt: new Date().toISOString() };
   localStorage.setItem(LS_KEYS.STUDENT_RESPONSES, JSON.stringify(all));
+}
+
+function getCourseOverrides() {
+  try { return JSON.parse(localStorage.getItem(LS_KEYS.COURSE_OVERRIDES) || '{}'); }
+  catch { return {}; }
+}
+function saveCourseOverride(courseId, patch) {
+  const all = getCourseOverrides();
+  all[courseId] = { ...(all[courseId] || {}), ...patch };
+  localStorage.setItem(LS_KEYS.COURSE_OVERRIDES, JSON.stringify(all));
+}
+function clearCourseOverrides() {
+  localStorage.removeItem(LS_KEYS.COURSE_OVERRIDES);
 }
 
 function getInstructorResponses() {
@@ -397,6 +432,7 @@ function buildHeader(activePage, data) {
           <a href="index.html" class="${activePage==='home'?'active':''}">Home</a>
           <a href="student.html" class="${activePage==='student'?'active':''}">Student Form</a>
           <a href="instructor.html" class="${activePage==='instructor'?'active':''}">Instructor Form</a>
+          <a href="course.html" class="${activePage==='course'?'active':''}">Course Admin</a>
           <a href="assigner.html" class="${activePage==='assigner'?'active':''}">Assigner</a>
         </nav>
         <div class="user-switch">

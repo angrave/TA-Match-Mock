@@ -170,10 +170,10 @@ function initInstructorForm(user) {
   document.getElementById('i_netid').value = me.netid;
   document.getElementById('i_area').value = me.area;
 
-  // Course dropdown — exclude 0-slot courses
+  // Course dropdown — exclude 0-slot courses and courses where TA allocation is disabled
   const courseSel = document.getElementById('i_course');
   courseSel.innerHTML = `<option value="">— Select a course —</option>` +
-    DATA.courses.filter(c => c.slots > 0).map(c =>
+    DATA.courses.filter(c => c.slots > 0 && c.allocTA === 'yes').map(c =>
       `<option value="${c.course_id}">${c.course_id} — ${c.title} (${c.slots} slot${c.slots!==1?'s':''})</option>`
     ).join('');
 

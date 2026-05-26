@@ -292,6 +292,7 @@ function initStudentForm(user) {
     };
     const onlyAB = document.getElementById('filterAB').checked;
     const filtered = DATA.courses.filter(c => {
+      if (c.allocTA !== 'yes') return false;
       if (!showLvl[c.level]) return false;
       if (filter && !(`${c.course_id} ${c.title}`.toLowerCase().includes(filter))) return false;
       if (onlyAB) {
@@ -380,7 +381,7 @@ function initStudentForm(user) {
 
   // Top 5
   function renderTopFive() {
-    const aCourses = DATA.courses.filter(c => state.ranks[c.course_id] === 'A');
+    const aCourses = DATA.courses.filter(c => c.allocTA === 'yes' && state.ranks[c.course_id] === 'A');
     const container = document.getElementById('topFiveContainer');
     if (!aCourses.length) {
       container.innerHTML = '<div class="muted small">Rank some courses as <b>A</b> to populate this list.</div>';

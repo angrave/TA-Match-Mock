@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>TA Assigner — Siebel School</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+  .phase-strip { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+  .phase-card {
+    flex: 1; min-width: 220px;
+    background: #fff; border: 1px solid var(--border); border-top: 4px solid var(--border);
+    padding: 14px; border-radius: 4px;
+  }
+  .phase-card.done { border-top-color: var(--good); }
+  .phase-card.current { border-top-color: var(--illinois-orange); box-shadow: 0 2px 8px rgba(232,74,39,0.15); }
+  .phase-card h3 { margin: 0 0 4px; }
+  .phase-card .pmeta { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .phase-card .pstat { font-size: 13px; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .stat {
+    background: #fff; border: 1px solid var(--border); padding: 12px; border-radius: 4px; text-align: center;
+  }
+  .stat .num { font-size: 28px; font-weight: 700; color: var(--illinois-blue); }
+  .stat .lbl { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .course-row {
+    background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px;
+    margin: 6px 0; display: grid; grid-template-columns: 130px 1fr 60px 1fr; gap: 12px; align-items: center;
+  }
+  .course-row.unfilled { border-left: 4px solid #B33A2C; }
+  .course-row.partial { border-left: 4px solid #E0A030; }
+  .course-row.full { border-left: 4px solid var(--good); }
+  .course-row .cid { font-weight: 700; color: var(--illinois-blue); }
+  .course-row .title { font-size: 13px; color: var(--text); }
+  .course-row .quota { text-align: center; font-size: 13px; color: var(--muted); }
+  .course-row .assigned .chip { font-size: 11px; padding: 2px 6px; }
+  .course-row .nobody { color: #B33A2C; font-style: italic; font-size: 12px; }
+
+  .seg { display:flex; gap:6px; margin: 10px 0; flex-wrap: wrap; }
+  .seg button {
+    background: #fff; border: 1px solid var(--border); padding: 6px 10px; border-radius: 3px;
+    font-size: 13px; cursor: pointer;
+  }
+  .seg button.on { background: var(--illinois-blue); color: white; border-color: var(--illinois-blue); }
+
+  .unmatched-list { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  .legend { font-size: 12px; color: var(--muted); display:flex; gap: 16px; flex-wrap: wrap; }
+  .legend .sw { display:inline-block; width:10px; height:10px; margin-right:4px; vertical-align: middle; }
+
+  .log {
+    background: #0F1B2D; color: #E8EEF7; font-family: ui-monospace, Menlo, monospace;
+    font-size: 12px; padding: 10px 14px; border-radius: 4px; max-height: 260px; overflow: auto;
+    white-space: pre-wrap;
+  }
+  .log .ok { color: #6FD08C; }
+  .log .warn { color: #FFC773; }
+  .log .err { color: #FF8B7A; }
+  .log .dim { color: #7F8FA8; }
+</style>
+</head>
+<body>
+<div id="app-header"></div>
+<main>
+  <h1>TA Assigner</h1>
+  <p class="muted">Runs the multi-phase matching process described in <code>PROCESS.md</code> using a course-proposing
+    Hospital-Residents (many-to-one Stable Marriage) algorithm.</p>
+
+  <div class="banner small">
+    <b>Process notes not captured in forms (yet):</b>
+    Phase 0 constraint document (assumed pre-published); 48–72hr instructor preference-revision window between sub-rounds;
+    25%↔50% upgrade pass. These are out of scope for this demo — re-running phases approximates them.
+  </div>
+
+  <h2>Inputs</h2>
+  <div class="stat-grid">
+    <div class="stat"><div class="num" id="stStudents">–</div><div class="lbl">Student responses</div></div>
+    <div class="stat"><div class="num" id="stCourses">–</div><div class="lbl">Instructor forms</div></div>
+    <div class="stat"><div class="num" id="stSetA">–</div><div class="lbl">Set A (constrained)</div></div>
+    <div class="stat"><div class="num" id="stSetB">–</div><div class="lbl">Set B (no strong reqs)</div></div>
+  </div>
+
+  <h2>Phases</h2>
+  <div class="phase-strip">
+    <div class="phase-card" id="card-2">
+      <h3>Phase 2</h3>
+      <div class="pmeta">Guaranteed PhDs (year ≤ 5) · initial quotas · Sets A &amp; B</div>
+      <div class="pstat" id="ps-2">Not yet run</div>
+    </div>
+    <div class="phase-card" id="card-3">
+      <h3>Phase 3</h3>
+      <div class="pmeta">+ Post-year-5 PhDs · fill remaining initial quotas</div>
+      <div class="pstat" id="ps-3">Not yet run</div>
+    </div>
+    <div class="phase-card" id="card-4">
+      <h3>Phase 4</h3>
+      <div class="pmeta">+ MSc students · raise to full slot count</div>
+      <div class="pstat" id="ps-4">Not yet run</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn" id="runPhaseBtn">Run next phase ▶</button>
+    <button class="btn ghost" id="resetBtn">Reset assignments</button>
+    <button class="btn ghost" id="autoFillBtn" title="Quickly create instructor forms for every course based on its area">Auto-fill missing instructor forms</button>
+    <span id="phaseStatus" class="muted"></span>
+  </div>
+
+  <h2>Assignments</h2>
+  <div class="seg" id="filterSeg">
+    <button data-f="all" class="on">All courses</button>
+    <button data-f="setA">Set A only</button>
+    <button data-f="setB">Set B only</button>
+    <button data-f="unfilled">Unfilled / partial</button>
+    <button data-f="100">100</button>
+    <button data-f="200">200</button>
+    <button data-f="300">300</button>
+    <button data-f="400">400</button>
+  </div>
+  <div class="legend">
+    <span><span class="sw" style="background:var(--good)"></span>Quota filled</span>
+    <span><span class="sw" style="background:#E0A030"></span>Partial</span>
+    <span><span class="sw" style="background:#B33A2C"></span>Unfilled (intervention may be needed)</span>
+    <span><span class="sw" style="background:var(--illinois-blue)"></span>chip = matched student</span>
+  </div>
+  <div id="assignmentsList"></div>
+
+  <h2>Unmatched eligible students <span class="muted small" id="unmatchedCount"></span></h2>
+  <div class="unmatched-list" id="unmatchedList"></div>
+
+  <h2>Algorithm log</h2>
+  <div class="log" id="log">(run a phase to see details)</div>
+</main>
+<div id="app-footer"></div>
+
+<script src="app.js"></script>
+<script>
+let DATA = null;
+let STATE = null; // { assignments: {course_id: [netids]}, phase: 0..3, log: [], byStudent: {netid: course_id} }
+
+function initialQuota(c) {
+  if (c.level >= 400) return c.slots; // Set A: take target quota at face value
+  return Math.max(1, Math.floor(c.slots / 2));
+}
+function fullQuota(c) { return c.slots; }
+function isSetA(c) { return c.level >= 400; }
+
+function logLine(html) {
+  STATE.log.push(html);
+  const el = document.getElementById('log');
+  el.innerHTML = STATE.log.join('\n');
+  el.scrollTop = el.scrollHeight;
+}
+
+function resetState() {
+  STATE = { assignments: {}, phase: 0, log: [], byStudent: {} };
+  DATA.courses.forEach(c => STATE.assignments[c.course_id] = []);
+}
+
+function studentTier(s) {
+  if (s.program === 'PhD' && s.year <= 5) return 0; // guaranteed
+  if (s.program === 'PhD') return 1; // post-5
+  return 2; // MSc
+}
+function phaseTierAllowed(phase) {
+  if (phase === 2) return new Set([0]);
+  if (phase === 3) return new Set([0, 1]);
+  return new Set([0, 1, 2]);
+}
+function quotaForPhase(c, phase) {
+  return phase >= 4 ? fullQuota(c) : initialQuota(c);
+}
+
+// Build preference lists for the current phase.
+// Course pref: instructor-preferred (in order) first, then acceptable students sorted by
+// (student's rank of this course, area match, tier, prevTA flag).
+// Student pref: courses ranked A > B > C (with topFive imposing order within A), exclude F + instructor-avoided.
+function buildPreferences(phase) {
+  const sResp = getStudentResponses();
+  const iResp = getInstructorResponses();
+  const allowed = phaseTierAllowed(phase);
+
+  // Helper: instructor form for a course (if any)
+  const iByCourse = {};
+  Object.values(iResp).forEach(r => { iByCourse[r.course_id] = r; });
+
+  // Eligible students: those with a response, with allowed tier, NOT already matched in a prior phase
+  const eligible = DATA.students.filter(s => {
+    if (!sResp[s.netid]) return false;
+    if (!allowed.has(studentTier(s))) return false;
+    if (STATE.byStudent[s.netid]) return false; // already matched
+    return true;
+  });
+
+  const studentPrefs = {}; // netid -> [course_id]
+  eligible.forEach(s => {
+    const resp = sResp[s.netid].state || {};
+    const ranks = resp.ranks || {};
+    const topFive = resp.topFive || [];
+    // For each course determine rank (with defaults)
+    const scored = DATA.courses.map(c => {
+      const r = ranks[c.course_id] || (c.hasReqs ? 'F' : 'C');
+      const tfIdx = topFive.indexOf(c.course_id); // -1 if not in topFive
+      // Exclude F
+      if (r === 'F') return null;
+      // Exclude courses where instructor explicitly avoided this student
+      const inst = iByCourse[c.course_id];
+      if (inst && inst.state && inst.state.avoidStudents && inst.state.avoidStudents.includes(s.netid)) return null;
+      // Eligibility check (skip ineligible) — Phase 2 students are eligible; we still drop "no" eligibility
+      if (sResp[s.netid].fields && sResp[s.netid].fields.eligible === 'no') return null;
+      return { c, rOrder: {A:0,B:1,C:2}[r], tfIdx: tfIdx >= 0 ? tfIdx : 999, areaMatch: c.area === s.area ? 0 : 1 };
+    }).filter(Boolean);
+    scored.sort((a,b) =>
+      a.rOrder - b.rOrder
+      || a.tfIdx - b.tfIdx
+      || a.areaMatch - b.areaMatch
+      || a.c.course_id.localeCompare(b.c.course_id)
+    );
+    studentPrefs[s.netid] = scored.map(x => x.c.course_id);
+  });
+
+  // Course prefs: each course considers all eligible students who include it in their pref list
+  const coursePrefs = {};
+  DATA.courses.forEach(c => {
+    if (quotaForPhase(c, phase) <= 0) { coursePrefs[c.course_id] = []; return; }
+    const inst = iByCourse[c.course_id];
+    const instructorPreferred = (inst && inst.state && inst.state.prefStudents) ? inst.state.prefStudents : [];
+    const avoidSet = new Set((inst && inst.state && inst.state.avoidStudents) || []);
+
+    const interested = eligible.filter(s =>
+      !avoidSet.has(s.netid) && (studentPrefs[s.netid] || []).includes(c.course_id));
+
+    // Sort interested: studentRank(this course) asc, area match, tier, prevTA(false preferred for tiebreak per doc),
+    // then alphabetical
+    const scored = interested.map(s => {
+      const resp = sResp[s.netid].state || {};
+      const r = (resp.ranks || {})[c.course_id] || (c.hasReqs ? 'F' : 'C');
+      const fields = sResp[s.netid].fields || {};
+      return {
+        s,
+        rOrder: {A:0,B:1,C:2}[r] ?? 9,
+        areaMatch: c.area === s.area ? 0 : 1,
+        tier: studentTier(s),
+        prevTA: fields.prevTA ? 1 : 0, // doc: tiebreaker among non-guaranteed favors those without prior TA support
+      };
+    });
+    scored.sort((a, b) =>
+      a.rOrder - b.rOrder
+      || a.areaMatch - b.areaMatch
+      || a.tier - b.tier
+      || a.prevTA - b.prevTA
+      || a.s.netid.localeCompare(b.s.netid)
+    );
+
+    // Final pref: instructor-preferred (in given order, filtered to those eligible & interested), then the rest
+    const preferredOrder = instructorPreferred.filter(nid =>
+      interested.find(s => s.netid === nid));
+    const seen = new Set(preferredOrder);
+    const rest = scored.map(x => x.s.netid).filter(nid => !seen.has(nid));
+    coursePrefs[c.course_id] = [...preferredOrder, ...rest];
+  });
+
+  return { studentPrefs, coursePrefs, eligible };
+}
+
+// Hospital-Residents (course-proposing). Returns map course_id -> [netid].
+function runHR(phase) {
+  const { studentPrefs, coursePrefs, eligible } = buildPreferences(phase);
+
+  // capacities
+  const capacity = {};
+  DATA.courses.forEach(c => {
+    const remaining = quotaForPhase(c, phase) - (STATE.assignments[c.course_id] || []).length;
+    capacity[c.course_id] = Math.max(0, remaining);
+  });
+
+  // student current match (within this phase)
+  const studentMatch = {}; // netid -> course_id (in this phase's tentative)
+  const courseMatch = {}; // course_id -> [netid] within this phase
+  DATA.courses.forEach(c => courseMatch[c.course_id] = []);
+
+  // Index of next student each course will propose to
+  const nextIdx = {};
+  DATA.courses.forEach(c => nextIdx[c.course_id] = 0);
+
+  function studentPrefersOver(nid, cNew, cOld) {
+    const list = studentPrefs[nid] || [];
+    const iNew = list.indexOf(cNew);
+    const iOld = list.indexOf(cOld);
+    if (iNew < 0) return false;
+    if (iOld < 0) return true;
+    return iNew < iOld;
+  }
+
+  let proposals = 0;
+  let acceptances = 0;
+  let rejections = 0;
+  let loopGuard = 0;
+  const maxLoops = DATA.courses.length * DATA.students.length + 50;
+
+  // Iterate until no course with remaining capacity has more candidates to propose to
+  while (loopGuard++ < maxLoops) {
+    let progressed = false;
+    for (const c of DATA.courses) {
+      if (capacity[c.course_id] <= 0) continue;
+      const prefs = coursePrefs[c.course_id];
+      while (capacity[c.course_id] > 0 && nextIdx[c.course_id] < prefs.length) {
+        const nid = prefs[nextIdx[c.course_id]++];
+        proposals++;
+        // Does student include this course?
+        const sList = studentPrefs[nid] || [];
+        if (!sList.includes(c.course_id)) { rejections++; continue; }
+        if (!studentMatch[nid]) {
+          // unmatched -> accept
+          studentMatch[nid] = c.course_id;
+          courseMatch[c.course_id].push(nid);
+          capacity[c.course_id]--;
+          acceptances++;
+          progressed = true;
+        } else {
+          const current = studentMatch[nid];
+          if (studentPrefersOver(nid, c.course_id, current)) {
+            // student leaves current match
+            const idx = courseMatch[current].indexOf(nid);
+            if (idx >= 0) courseMatch[current].splice(idx, 1);
+            capacity[current]++;
+            // join new
+            studentMatch[nid] = c.course_id;
+            courseMatch[c.course_id].push(nid);
+            capacity[c.course_id]--;
+            acceptances++;
+            rejections++;
+            progressed = true;
+          } else {
+            rejections++;
+          }
+        }
+      }
+    }
+    if (!progressed) break;
+  }
+
+  // Merge into STATE.assignments
+  let newMatches = 0;
+  DATA.courses.forEach(c => {
+    courseMatch[c.course_id].forEach(nid => {
+      STATE.assignments[c.course_id].push(nid);
+      STATE.byStudent[nid] = c.course_id;
+      newMatches++;
+    });
+  });
+
+  return { proposals, acceptances, rejections, newMatches, eligibleCount: eligible.length };
+}
+
+function renderAll() {
+  // Header stats
+  const sResp = getStudentResponses();
+  const iResp = getInstructorResponses();
+  document.getElementById('stStudents').textContent = Object.keys(sResp).length;
+  document.getElementById('stCourses').textContent = Object.keys(iResp).length;
+  document.getElementById('stSetA').textContent = DATA.courses.filter(c => isSetA(c) && c.slots > 0).length;
+  document.getElementById('stSetB').textContent = DATA.courses.filter(c => !isSetA(c) && c.slots > 0).length;
+
+  // Phase cards
+  [2,3,4].forEach(p => {
+    const card = document.getElementById('card-' + p);
+    card.classList.remove('done','current');
+    if (STATE.phase >= p) card.classList.add('done');
+    if (STATE.phase + 1 === p) card.classList.add('current');
+  });
+  const nextP = STATE.phase + 1;
+  document.getElementById('runPhaseBtn').disabled = nextP > 4;
+  document.getElementById('runPhaseBtn').textContent =
+    nextP > 4 ? 'All phases complete' : `Run Phase ${nextP} ▶`;
+
+  renderAssignments();
+}
+
+function renderAssignments() {
+  const sResp = getStudentResponses();
+  const studentByNetid = {};
+  DATA.students.forEach(s => studentByNetid[s.netid] = s);
+
+  const filterEl = document.querySelector('#filterSeg button.on');
+  const filter = filterEl ? filterEl.dataset.f : 'all';
+
+  const courses = DATA.courses.filter(c => {
+    if (c.slots <= 0) return false;
+    if (filter === 'setA') return isSetA(c);
+    if (filter === 'setB') return !isSetA(c);
+    if (filter === '100') return c.level === 100;
+    if (filter === '200') return c.level === 200;
+    if (filter === '300') return c.level === 300;
+    if (filter === '400') return c.level === 400;
+    if (filter === 'unfilled') {
+      const targetQ = STATE.phase >= 4 ? fullQuota(c) : initialQuota(c);
+      return (STATE.assignments[c.course_id] || []).length < targetQ;
+    }
+    return true;
+  });
+
+  const targetQ = c => STATE.phase >= 4 ? fullQuota(c) : initialQuota(c);
+  document.getElementById('assignmentsList').innerHTML = courses.map(c => {
+    const matched = STATE.assignments[c.course_id] || [];
+    const goal = targetQ(c);
+    let cls = 'full';
+    if (matched.length === 0) cls = goal > 0 ? 'unfilled' : 'full';
+    else if (matched.length < goal) cls = 'partial';
+    const chips = matched.length ? matched.map(nid => {
+      const s = studentByNetid[nid];
+      const tier = s ? studentTier(s) : 9;
+      const tag = tier === 0 ? '' : (tier === 1 ? ' (post-5)' : ' (MSc)');
+      return `<span class="chip">${s ? s.name : nid} <span class="num">${nid}</span>${tag}</span>`;
+    }).join('') : '<span class="nobody">no TA assigned</span>';
+    return `
+      <div class="course-row ${cls}">
+        <div>
+          <div class="cid">${c.course_id}${isSetA(c) ? '<span class="req-tag">A</span>':''}</div>
+          <div class="small muted">${c.area} · L${c.level}</div>
+        </div>
+        <div class="title">${c.title}</div>
+        <div class="quota">${matched.length}/${goal}<div class="small muted">${c.slots} slot${c.slots!==1?'s':''}</div></div>
+        <div class="assigned">${chips}</div>
+      </div>`;
+  }).join('') || '<div class="muted">No courses match the current filter.</div>';
+
+  // Unmatched eligible students
+  const allowed = phaseTierAllowed(STATE.phase || 4); // show unmatched for the last-run phase pool
+  const sRespAll = getStudentResponses();
+  const unmatched = DATA.students.filter(s =>
+    sRespAll[s.netid] && allowed.has(studentTier(s)) && !STATE.byStudent[s.netid]
+  );
+  document.getElementById('unmatchedCount').textContent = unmatched.length ? `(${unmatched.length})` : '';
+  document.getElementById('unmatchedList').innerHTML = unmatched.length
+    ? unmatched.map(s => `<span class="chip warn">${s.name} <span class="num">${s.netid}</span> ${s.program} Y${s.year}</span>`).join('')
+    : '<span class="muted small">— none, or no phase run yet —</span>';
+}
+
+function runNextPhase() {
+  const p = STATE.phase + 1;
+  if (p > 4) return;
+  if (p === 2) {
+    // initialize log fresh
+    STATE.log = [];
+    logLine(`<span class="dim">═══ Phase ${p}: guaranteed PhDs (year ≤ 5) → initial quotas ═══</span>`);
+  } else if (p === 3) {
+    logLine(`\n<span class="dim">═══ Phase ${p}: + post-year-5 PhDs ═══</span>`);
+  } else {
+    logLine(`\n<span class="dim">═══ Phase ${p}: + MSc students · quotas raised to full slot count ═══</span>`);
+  }
+  const result = runHR(p);
+  STATE.phase = p;
+
+  // Per-course summary line
+  const totalAssigned = Object.values(STATE.assignments).reduce((a,b)=>a+b.length,0);
+  logLine(`Eligible new students: <b>${result.eligibleCount}</b>`);
+  logLine(`Proposals: ${result.proposals} · Acceptances: ${result.acceptances} · Rejections: ${result.rejections}`);
+  logLine(`<span class="ok">New matches this phase: ${result.newMatches}</span> · Total assigned so far: ${totalAssigned}`);
+
+  // Unfilled Set A intervention check (Phase 2)
+  if (p === 2) {
+    const setAUnfilled = DATA.courses.filter(c =>
+      isSetA(c) && c.slots > 0 && STATE.assignments[c.course_id].length < initialQuota(c));
+    if (setAUnfilled.length) {
+      logLine(`<span class="warn">⚠ ${setAUnfilled.length} Set A course(s) unfilled — per PROCESS.md this signals "intervention may be needed":</span>`);
+      setAUnfilled.slice(0, 10).forEach(c => {
+        logLine(`   • ${c.course_id} ${c.title} (${STATE.assignments[c.course_id].length}/${initialQuota(c)})`);
+      });
+      if (setAUnfilled.length > 10) logLine(`   …and ${setAUnfilled.length - 10} more`);
+    } else {
+      logLine(`<span class="ok">✓ All Set A courses meet initial quota.</span>`);
+    }
+  }
+  // Phase summary stat on card
+  document.getElementById('ps-' + p).innerHTML =
+    `<span class="ok">+${result.newMatches} matches</span> from ${result.eligibleCount} eligible`;
+
+  document.getElementById('phaseStatus').textContent = `Phase ${p} complete at ${new Date().toLocaleTimeString()}`;
+  renderAll();
+}
+
+function autoFillInstructorForms() {
+  // For any course without an instructor form, create a minimal one with a plausible instructor
+  // (faculty whose area matches the course area, else any faculty) and a few preferred area-matching students.
+  const iResp = getInstructorResponses();
+  const sResp = getStudentResponses();
+  let added = 0;
+  DATA.courses.forEach(c => {
+    if (c.slots <= 0) return;
+    // Already have a form for this course? (any instructor)
+    const hasForm = Object.values(iResp).some(r => r.course_id === c.course_id);
+    if (hasForm) return;
+    const candidates = DATA.faculty.filter(f => f.area === c.area);
+    const instructor = (candidates.length ? candidates : DATA.faculty)[added % Math.max(1, candidates.length || DATA.faculty.length)];
+    // Preferred students: area match with student response, top 3
+    const prefStudents = DATA.students
+      .filter(s => s.area === c.area && sResp[s.netid])
+      .slice(0, 3)
+      .map(s => s.netid);
+    const key = `${instructor.netid}::${c.course_id}`;
+    saveInstructorResponse(key, {
+      instructor: instructor.netid,
+      course_id: c.course_id,
+      fields: { course_id: c.course_id, area: c.area, thesis: '', reqs: '', prefs: '' },
+      state: { prefStudents, backupStudents: [], avoidStudents: [] }
+    });
+    added++;
+  });
+  alert(`Auto-filled instructor forms for ${added} course(s). Reset assignments and re-run phases to see effect.`);
+  resetState();
+  renderAll();
+}
+
+(async function() {
+  DATA = await loadAllData();
+  ensureSeededStudentResponses(DATA);
+  buildHeader('assigner', DATA);
+  buildFooter();
+  resetState();
+  renderAll();
+
+  document.getElementById('runPhaseBtn').addEventListener('click', runNextPhase);
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    resetState();
+    document.getElementById('log').innerHTML = '(reset — run a phase to see details)';
+    document.getElementById('phaseStatus').textContent = '';
+    [2,3,4].forEach(p => document.getElementById('ps-'+p).innerHTML = 'Not yet run');
+    renderAll();
+  });
+  document.getElementById('autoFillBtn').addEventListener('click', autoFillInstructorForms);
+  document.querySelectorAll('#filterSeg button').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#filterSeg button').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      renderAssignments();
+    });
+  });
+})();
+</script>
+</body>
+</html>

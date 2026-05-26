@@ -617,6 +617,7 @@ function downloadXlsx() {
 (async function() {
   DATA = await loadAllData();
   ensureSeededStudentResponses(DATA);
+  ensureSeededInstructorResponses(DATA);
   buildHeader('assigner', DATA);
   buildFooter();
   resetState();

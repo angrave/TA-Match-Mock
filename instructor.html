@@ -68,6 +68,12 @@
     <div class="panel">
       <h2>Preferred TAs</h2>
       <p class="muted">Students you want to work with, in priority order. We will surface eligibility/priority info as you add students.</p>
+
+      <details id="smartDetails" style="margin-bottom:1rem">
+        <summary style="cursor:pointer;font-weight:600;color:var(--primary)">Suggested students <span class="muted small">(click to expand)</span></summary>
+        <div id="smartSuggestions" style="margin-top:0.5rem"></div>
+      </details>
+
       <div class="row" style="align-items:flex-end">
         <div>
           <label>Add student</label>
@@ -116,12 +122,6 @@
       <textarea id="i_prefs" placeholder="e.g. Prior experience with LLVM. Has taken CS 426. Strong technical writing."></textarea>
     </div>
 
-    <div class="panel">
-      <h2>Smart suggestions</h2>
-      <p class="muted small">Based on prior TAs, incoming students, and student responses on file.</p>
-      <div id="smartSuggestions"></div>
-    </div>
-
     <div class="banner small">
       Saved data lives in your browser only (LocalStorage). One submission per <i>(instructor, course)</i> pair.
     </div>
@@ -142,6 +142,7 @@ let DATA = null;
 (async function() {
   DATA = await loadAllData();
   ensureSeededStudentResponses(DATA);
+  ensureSeededInstructorResponses(DATA);
   buildHeader('instructor', DATA);
   buildFooter();
 
@@ -278,6 +279,26 @@ function initInstructorForm(user) {
     });
   });
 
+  function addSuggestedStudent(nid) {
+    const inOther = [state.backupStudents, state.avoidStudents].some(a => a.includes(nid));
+    if (inOther) {
+      alert('That student is already in another list. Remove them first.');
+      return;
+    }
+    if (!state.prefStudents.includes(nid)) {
+      state.prefStudents.push(nid);
+      renderAll();
+    }
+    renderSmart();
+  }
+
+  function suggestChip(s) {
+    const already = state.prefStudents.includes(s.netid);
+    const style = already ? 'opacity:0.5;cursor:default' : 'cursor:pointer';
+    const title = already ? 'Already in preferred list' : 'Click to add to preferred list';
+    return `<span class="chip" data-suggest="${s.netid}" style="${style}" title="${title}">${s.name} (${s.netid})${already ? ' ✓' : ' +'}</span>`;
+  }
+
   function renderSmart() {
     const box = document.getElementById('smartSuggestions');
     if (!fields.course_id) {
@@ -287,7 +308,6 @@ function initInstructorForm(user) {
     const course = DATA.courses.find(c => c.course_id === fields.course_id);
     if (!course) { box.innerHTML = ''; return; }
 
-    // Suggested students: matching area, plus students who ranked this course A in their saved response
     const sResp = getStudentResponses();
     const interested = DATA.students.filter(s => {
       const r = sResp[s.netid];
@@ -295,16 +315,15 @@ function initInstructorForm(user) {
     });
     const areaMatch = DATA.students.filter(s => s.area === course.area).slice(0, 6);
 
-    let html = '';
+    let html = '<div class="muted small" style="margin-bottom:0.4rem">Click a student to add them to your preferred list.</div>';
     if (interested.length) {
       html += `<div class="smart-hints"><b>${interested.length}</b> student(s) ranked this course as <b>A</b> in their form:
-        ${interested.map(s => `<span class="chip">${s.name} (${s.netid})</span>`).join(' ')}</div>`;
+        ${interested.map(s => suggestChip(s)).join(' ')}</div>`;
     }
     if (areaMatch.length) {
       html += `<div class="smart-hints">Students in research area <b>${course.area}</b>:
-        ${areaMatch.map(s => `<span class="chip">${s.name} (${s.netid})</span>`).join(' ')}</div>`;
+        ${areaMatch.map(s => suggestChip(s)).join(' ')}</div>`;
     }
-    // priority info for selected preferred students
     if (state.prefStudents.length) {
       const flagged = state.prefStudents.map(nid => DATA.students.find(s => s.netid === nid)).filter(Boolean);
       const guaranteed = flagged.filter(s => isGuaranteed(s)).length;
@@ -314,8 +333,15 @@ function initInstructorForm(user) {
         <b>${phdUnguar}</b> unguaranteed PhD, <b>${msUnguar}</b> unguaranteed MS/MSc.
         (Students without a guarantee may not receive support.)</div>`;
     }
-    if (!html) html = '<div class="muted small">No suggestions yet for this course.</div>';
+    if (!interested.length && !areaMatch.length) html += '<div class="muted small">No suggestions yet for this course.</div>';
     box.innerHTML = html;
+
+    box.querySelectorAll('[data-suggest]').forEach(chip => {
+      const nid = chip.dataset.suggest;
+      if (!state.prefStudents.includes(nid)) {
+        chip.addEventListener('click', () => addSuggestedStudent(nid));
+      }
+    });
   }
 
   // Re-render smart panel as prefs change

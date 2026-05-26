@@ -50,6 +50,8 @@
 <script>
 (async function() {
   const DATA = await loadAllData();
+  ensureSeededStudentResponses(DATA);
+  ensureSeededInstructorResponses(DATA);
   buildHeader('course', DATA);
   buildFooter();
 

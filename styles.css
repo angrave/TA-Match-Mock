@@ -242,6 +242,40 @@ table.courses tr:hover { background: #FFF6F2; }
 .chip.warn { background: #B33A2C; }
 .chip .x { cursor: pointer; font-weight: bold; }
 .chip .num { background: rgba(255,255,255,0.25); padding: 0 5px; border-radius: 8px; font-size: 11px; }
+.chip .mv-btn { cursor: pointer; font-size: 10px; opacity: 0.8; padding: 0 2px; }
+.chip .mv-btn:hover { opacity: 1; }
+.chip .mv-dis { opacity: 0.3; cursor: default; pointer-events: none; }
+
+@keyframes chip-flash {
+  0%   { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.5); transform: scale(1.08); }
+  70%  { background: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,0.2); transform: scale(1.03); }
+  100% { background: var(--illinois-blue); box-shadow: none; transform: scale(1); }
+}
+.chip.chip-moved { animation: chip-flash 0.45s ease-out forwards; }
+
+.form-tabs {
+  display: flex;
+  gap: 0;
+  margin: 1.2rem 0 0;
+  border-bottom: 2px solid var(--border);
+}
+.form-tab-btn {
+  padding: 10px 26px;
+  border: none;
+  background: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #666;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+  border-radius: 4px 4px 0 0;
+}
+.form-tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+.form-tab-btn:hover:not(.active) { color: var(--text); background: rgba(0,0,0,0.03); }
+.tab-section { animation: tab-fade 0.18s ease-out; }
+@keyframes tab-fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
 .search-input { max-width: 280px; }
 .filters { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }

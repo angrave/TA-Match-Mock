@@ -107,6 +107,8 @@ h2 {
   margin-top: 28px;
   margin-bottom: 8px;
 }
+.panel > h2:first-child,
+.panel > label:first-child { margin-top: 0; }
 h3 { font-size: 15px; margin: 16px 0 6px; color: var(--illinois-blue); }
 
 .instructions, .recommendations {

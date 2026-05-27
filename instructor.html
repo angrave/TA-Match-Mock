@@ -32,6 +32,25 @@
       to also select your course as preferred.
     </div>
 
+    <!-- Thesis students — always visible, instructor-level -->
+    <div class="panel" id="thesisPanel">
+      <label>Your thesis students (PhD, MS, or MSc) — netids, with optional notes</label>
+      <textarea id="i_thesis" placeholder="e.g. amelia2 (PhD Y3), oscarq2 (PhD Y2, admitted this year with TAship)"></textarea>
+    </div>
+
+    <!-- Students to avoid — always visible, instructor-level -->
+    <div class="panel" id="avoidPanel">
+      <h2>Students you do not want to work with</h2>
+      <div class="row" style="align-items:flex-end">
+        <div>
+          <label>Add student</label>
+          <select id="avoidStuSel" data-combobox></select>
+        </div>
+        <button class="btn secondary" id="addAvoidStu" type="button" style="flex:0 0 auto">Add to avoid list</button>
+      </div>
+      <div class="ordered-list" id="avoidStuList"></div>
+    </div>
+
     <!-- My courses nav -->
     <div class="panel" id="courseNav"></div>
 
@@ -53,20 +72,7 @@
           <label>Currently editing</label>
           <div id="i_course_info" class="current-course-display">—</div>
         </div>
-        <div>
-          <label>Research area for this course</label>
-          <select id="i_area">
-            <option value="">— Select —</option>
-            <option>AI</option><option>DAIS</option><option>Theory</option>
-            <option>Architecture</option><option>Systems</option><option>Security</option>
-            <option>Graphics</option><option>PL</option><option>SE</option>
-            <option>SciComp</option><option>Parallel</option><option>Bioinformatics</option>
-            <option>Robotics</option><option>General</option>
-          </select>
-        </div>
       </div>
-      <label>Your thesis students (PhD, MS, or MSc) — netids, with optional notes</label>
-      <textarea id="i_thesis" placeholder="e.g. amelia2 (PhD Y3), oscarq2 (PhD Y2, admitted this year with TAship)"></textarea>
     </div>
 
     <div id="courseFormBody" style="display:none">
@@ -86,6 +92,19 @@
           PhD in particular research group, has TA'd this course before, GPU/NLP/parallel computing expertise,
           availability for office hours / discussion sections.
         </p>
+        <div class="row" style="margin-bottom:1rem">
+          <div>
+            <label>Research area for this course</label>
+            <select id="i_area">
+              <option value="">— Select —</option>
+              <option>AI</option><option>DAIS</option><option>Theory</option>
+              <option>Architecture</option><option>Systems</option><option>Security</option>
+              <option>Graphics</option><option>PL</option><option>SE</option>
+              <option>SciComp</option><option>Parallel</option><option>Bioinformatics</option>
+              <option>Robotics</option><option>General</option>
+            </select>
+          </div>
+        </div>
         <label>Hard requirements (must-have)</label>
         <textarea id="i_reqs" placeholder="e.g. Must have taken CS 421 with grade >= A-. Must be available Tu/Th 2-3:15 for discussion."></textarea>
 
@@ -127,17 +146,6 @@
         <div class="ordered-list" id="backupStuList"></div>
       </div>
 
-      <div class="panel">
-        <h2>Students you do not want to work with</h2>
-        <div class="row" style="align-items:flex-end">
-          <div>
-            <label>Add student</label>
-            <select id="avoidStuSel" data-combobox></select>
-          </div>
-          <button class="btn secondary" id="addAvoidStu" type="button" style="flex:0 0 auto">Add to avoid list</button>
-        </div>
-        <div class="ordered-list" id="avoidStuList"></div>
-      </div>
     </div>
 
     <div class="banner small">
@@ -186,7 +194,31 @@ function initInstructorForm(user) {
   const me = DATA.faculty.find(f => f.netid === user.netid);
   document.getElementById('i_name').value = me.name;
   document.getElementById('i_netid').value = me.netid;
-  document.getElementById('i_area').value = me.area;
+
+  // Instructor-level state (not per-course)
+  const instrKey = `${me.netid}::__instructor__`;
+  const instrState = { avoidStudents: [] };
+  const instrFields = { thesis: '' };
+
+  function loadInstructorLevel() {
+    const all = getInstructorResponses();
+    const saved = all[instrKey];
+    instrFields.thesis = saved?.thesis || '';
+    instrState.avoidStudents = saved?.avoidStudents || [];
+    document.getElementById('i_thesis').value = instrFields.thesis;
+    renderAvoidList();
+  }
+  function saveInstructorLevel() {
+    const all = getInstructorResponses();
+    all[instrKey] = { ...all[instrKey], thesis: instrFields.thesis, avoidStudents: instrState.avoidStudents, updatedAt: new Date().toISOString() };
+    localStorage.setItem(LS_KEYS.INSTRUCTOR_RESPONSES, JSON.stringify(all));
+  }
+  loadInstructorLevel();
+
+  document.getElementById('i_thesis').addEventListener('input', e => {
+    instrFields.thesis = e.target.value;
+    saveInstructorLevel();
+  });
 
   // Tab switching
   document.querySelectorAll('.form-tab-btn').forEach(btn => {
@@ -307,12 +339,10 @@ function initInstructorForm(user) {
   const state = {
     prefStudents: [],
     backupStudents: [],
-    avoidStudents: [],
   };
   const fields = {
     course_id: '',
     area: me.area,
-    thesis: '',
     reqs: '',
     prefs: '',
   };
@@ -332,10 +362,8 @@ function initInstructorForm(user) {
     } else {
       state.prefStudents = [];
       state.backupStudents = [];
-      state.avoidStudents = [];
-      fields.thesis = ''; fields.reqs = ''; fields.prefs = '';
+      fields.reqs = ''; fields.prefs = '';
     }
-    document.getElementById('i_thesis').value = fields.thesis;
     document.getElementById('i_reqs').value = fields.reqs;
     document.getElementById('i_prefs').value = fields.prefs;
     document.getElementById('i_area').value = fields.area || me.area;
@@ -367,7 +395,7 @@ function initInstructorForm(user) {
     return `<span class="chip${movedCls} ${warn?'warn':''}">${idx!==null?`<span class="num">${idx+1}</span>`:''} ${label}${badges}${moveButtons} <span class="x" data-nid="${nid}">×</span></span>`;
   }
 
-  function renderList(targetId, arr, warn=false, ordered=true) {
+  function renderList(targetId, arr, warn=false, ordered=true, saveFn=scheduleSave) {
     const el = document.getElementById(targetId);
     el.innerHTML = arr.length ? arr.map((n, i) => chipFor(n, warn, ordered?i:null, arr.length)).join('')
       : '<span class="muted small">None added.</span>';
@@ -375,7 +403,7 @@ function initInstructorForm(user) {
       const i = arr.indexOf(x.dataset.nid);
       if (i >= 0) arr.splice(i, 1);
       renderAll();
-      scheduleSave();
+      saveFn();
     });
     el.querySelectorAll('.mv-btn:not(.mv-dis)').forEach(btn => btn.onclick = () => {
       const i = arr.indexOf(btn.dataset.nid);
@@ -388,7 +416,7 @@ function initInstructorForm(user) {
       }
       renderAll();
       flashNid = null;
-      scheduleSave();
+      saveFn();
     });
   }
 
@@ -493,18 +521,22 @@ function initInstructorForm(user) {
     }));
   }
 
+  function renderAvoidList() {
+    renderList('avoidStuList', instrState.avoidStudents, true, false, saveInstructorLevel);
+  }
+
   function renderAll() {
     renderPrefTable(state.prefStudents);
     renderList('backupStuList', state.backupStudents);
-    renderList('avoidStuList', state.avoidStudents, true, false);
+    renderAvoidList();
     renderCourseNav();
   }
 
-  function addStudent(selId, arr) {
+  function addStudent(selId, arr, saveFn=scheduleSave) {
     const v = document.getElementById(selId).value;
     if (!v) return;
-    const inOther = [state.prefStudents, state.backupStudents, state.avoidStudents]
-      .filter(a => a !== arr).some(a => a.includes(v));
+    const allLists = [state.prefStudents, state.backupStudents, instrState.avoidStudents];
+    const inOther = allLists.filter(a => a !== arr).some(a => a.includes(v));
     if (inOther) {
       alert('That student is already in another list. Remove them first.');
       return;
@@ -512,17 +544,16 @@ function initInstructorForm(user) {
     if (!arr.includes(v)) arr.push(v);
     clearCombobox(selId);
     renderAll();
-    scheduleSave();
+    saveFn();
   }
   document.getElementById('addPrefStu').onclick = () => addStudent('prefStuSel', state.prefStudents);
   document.getElementById('addBackupStu').onclick = () => addStudent('backupStuSel', state.backupStudents);
-  document.getElementById('addAvoidStu').onclick = () => addStudent('avoidStuSel', state.avoidStudents);
+  document.getElementById('addAvoidStu').onclick = () => addStudent('avoidStuSel', instrState.avoidStudents, saveInstructorLevel);
 
-  ['i_thesis','i_reqs','i_prefs','i_area'].forEach(id => {
+  ['i_reqs','i_prefs','i_area'].forEach(id => {
     document.getElementById(id).addEventListener('input', e => {
       const k = id.replace('i_','');
-      if (k === 'thesis') fields.thesis = e.target.value;
-      else if (k === 'reqs') fields.reqs = e.target.value;
+      if (k === 'reqs') fields.reqs = e.target.value;
       else if (k === 'prefs') fields.prefs = e.target.value;
       else if (k === 'area') fields.area = e.target.value;
       scheduleSave();
@@ -530,7 +561,7 @@ function initInstructorForm(user) {
   });
 
   function addSuggestedStudent(nid) {
-    const inOther = [state.backupStudents, state.avoidStudents].some(a => a.includes(nid));
+    const inOther = [state.backupStudents, instrState.avoidStudents].some(a => a.includes(nid));
     if (inOther) {
       alert('That student is already in another list. Remove them first.');
       return;

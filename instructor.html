@@ -79,6 +79,7 @@
         <div class="row" style="margin-bottom:1rem">
           <div>
             <label>Primary research area for this course</label>
+            <p class="muted small">Lower level courses and other courses that do not need a specific research area (e.g. CS 499) should use "N/A".</p>
             <select id="i_area">
               <option value="">— Select —</option>
               <option>N/A</option>
@@ -90,11 +91,11 @@
             </select>
           </div>
         </div>
-        <label>Hard requirements (must-have)</label>
-        <textarea id="i_reqs" placeholder="e.g. Must have taken CS 421 with grade >= A-. Must be available Tu/Th 2-3:15 for discussion."></textarea>
-
         <label>Preferences (nice-to-have, not required)</label>
         <textarea id="i_prefs" placeholder="e.g. Prior experience with LLVM. Has taken CS 426. Strong technical writing."></textarea>
+
+        <label>Hard requirements (must-have)</label>
+        <textarea id="i_reqs" placeholder="e.g. Must have taken CS 421 with grade >= A-. Must be available Tu/Th 2-3:15 for discussion."></textarea>
       </div>
     </div>
 
@@ -217,7 +218,7 @@ function initInstructorForm(user) {
   });
 
   const stuOpts = `<option value="">— Select student —</option>` +
-    DATA.students.map(s => `<option value="${s.netid}">${studentLabel(s)}</option>`).join('');
+    DATA.students.map(s => `<option value="${s.netid}" data-search="${s.name} ${s.netid}">${studentLabel(s)}</option>`).join('');
   ['prefStuSel','backupStuSel','avoidStuSel'].forEach(id => document.getElementById(id).innerHTML = stuOpts);
   enhanceAllSelects();
 
@@ -267,7 +268,7 @@ function initInstructorForm(user) {
     html += `<p class="muted small" style="margin-bottom:10px">Click a row to fill out TA preferences for that course.</p>
       <table class="course-nav-table">
         <thead><tr>
-          <th>Course</th><th>Title</th><th>Expected TA Slot</th><th>Pref. Students</th><th>Status</th>
+          <th>Course</th><th>Title</th><th>Expected TA Slot(s)</th><th># Preferred Students</th><th>Status</th>
         </tr></thead><tbody>`;
 
     courses.forEach(c => {
@@ -426,6 +427,11 @@ function initInstructorForm(user) {
         <th></th>
       </tr></thead><tbody>`;
 
+    const course = DATA.courses.find(c => c.course_id === cid);
+    const mailSubject = cid && course
+      ? encodeURIComponent(`Question re TA Interest in ${cid} ${course.title}`)
+      : '';
+
     arr.forEach((nid, i) => {
       const s = DATA.students.find(x => x.netid === nid);
       const r = sResp[nid];
@@ -450,12 +456,15 @@ function initInstructorForm(user) {
         ? `<span class="rank-badge rank-${stuRank}">${stuRank}</span>`
         : `<span class="muted small">—</span>`;
       const movedCls = nid === flashNid ? ' row-moved' : '';
+      const mailLink = mailSubject
+        ? ` <a href="mailto:${nid}@illinois.edu?subject=${mailSubject}" title="Email ${nid}@illinois.edu" style="margin-left:0.3em;color:var(--primary);opacity:0.7;text-decoration:none;font-size:1.1em" target="_blank">✉</a>`
+        : '';
 
       html += `<tr class="${movedCls}" data-nid="${nid}">
         <td class="col-pos">${i + 1}</td>
         <td class="col-name">
           <div class="stu-name">${name}</div>
-          <div class="stu-nid">${nid}</div>
+          <div class="stu-nid">${nid}${mailLink}</div>
         </td>
         <td>${year}</td>
         <td>${progCell}</td>

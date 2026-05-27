@@ -469,10 +469,10 @@ function enhanceSelect(selectEl, opts = {}) {
     Array.from(selectEl.children).forEach(child => {
       if (child.tagName === 'OPTGROUP') {
         Array.from(child.children).forEach(o => {
-          if (o.value !== '') out.push({ value: o.value, label: o.textContent, group: child.label });
+          if (o.value !== '') out.push({ value: o.value, label: o.textContent, search: o.dataset.search || o.textContent, group: child.label });
         });
       } else if (child.tagName === 'OPTION') {
-        if (child.value !== '') out.push({ value: child.value, label: child.textContent });
+        if (child.value !== '') out.push({ value: child.value, label: child.textContent, search: child.dataset.search || child.textContent });
       }
     });
     return out;
@@ -491,8 +491,7 @@ function enhanceSelect(selectEl, opts = {}) {
     const all = gatherOptions();
     const needle = filter.toLowerCase().trim();
     const matches = !needle ? all : all.filter(o =>
-      o.value.toLowerCase().includes(needle) ||
-      o.label.toLowerCase().includes(needle)
+      o.search.toLowerCase().includes(needle)
     );
     currentMatches = matches;
 
@@ -564,10 +563,9 @@ function enhanceSelect(selectEl, opts = {}) {
       activeIdx = Math.max(0, activeIdx - 1);
       updateActive();
     } else if (e.key === 'Enter') {
-      if (currentMatches.length) {
-        e.preventDefault();
-        const pick = activeIdx >= 0 ? currentMatches[activeIdx] : currentMatches[0];
-        selectMatch(pick);
+      e.preventDefault();
+      if (activeIdx >= 0 && currentMatches[activeIdx]) {
+        selectMatch(currentMatches[activeIdx]);
       }
     } else if (e.key === 'Escape') {
       popup.style.display = 'none';

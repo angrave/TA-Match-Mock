@@ -32,8 +32,11 @@
       to also select your course as preferred.
     </div>
 
-    <!-- Always-visible course selector panel -->
-    <div class="panel">
+    <!-- My courses nav -->
+    <div class="panel" id="courseNav"></div>
+
+    <!-- Always-visible about panel -->
+    <div class="panel" id="courseFormPanel" style="display:none">
       <h2>About this class</h2>
       <div class="row">
         <div>
@@ -47,8 +50,8 @@
       </div>
       <div class="row">
         <div>
-          <label>Course you are teaching</label>
-          <select id="i_course" data-combobox></select>
+          <label>Currently editing</label>
+          <div id="i_course_info" class="current-course-display">—</div>
         </div>
         <div>
           <label>Research area for this course</label>
@@ -66,6 +69,7 @@
       <textarea id="i_thesis" placeholder="e.g. amelia2 (PhD Y3), oscarq2 (PhD Y2, admitted this year with TAship)"></textarea>
     </div>
 
+    <div id="courseFormBody" style="display:none">
     <!-- Tab switcher -->
     <div class="form-tabs">
       <button class="form-tab-btn active" data-tab="requirements" id="tabBtn-requirements">Course Requirements</button>
@@ -109,7 +113,7 @@
           </div>
           <button class="btn secondary" id="addPrefStu" type="button" style="flex:0 0 auto">Add to preferred</button>
         </div>
-        <div class="ordered-list" id="prefStuList"></div>
+        <div id="prefStuList"></div>
 
         <h3>Backup preferences (if awarded only 25%)</h3>
         <p class="muted small">Students you would want as 25% TAs and are willing to supplement with RA support.</p>
@@ -141,10 +145,9 @@
     </div>
 
     <div class="toolbar">
-      <button class="btn" id="saveBtn">Save form for this course</button>
-      <button class="btn ghost" id="loadBtn">Reload saved</button>
       <span id="saveStatus" class="muted"></span>
     </div>
+    </div><!-- end courseFormBody -->
   </div>
 </main>
 <div id="app-footer"></div>
@@ -193,24 +196,113 @@ function initInstructorForm(user) {
       document.querySelectorAll('.tab-section').forEach(s => s.style.display = 'none');
       const section = document.getElementById(`tab-${tab}`);
       section.style.display = 'block';
-      // Re-trigger fade animation
       section.classList.remove('tab-section');
       void section.offsetWidth;
       section.classList.add('tab-section');
     });
   });
 
-  // Course dropdown — exclude 0-slot courses and courses where TA allocation is disabled
-  const courseSel = document.getElementById('i_course');
-  courseSel.innerHTML = `<option value="">— Select a course —</option>` +
-    DATA.courses.filter(c => c.slots > 0 && c.allocTA === 'yes').map(c =>
-      `<option value="${c.course_id}">${c.course_id} — ${c.title} (${c.slots} slot${c.slots!==1?'s':''})</option>`
-    ).join('');
-
   const stuOpts = `<option value="">— Select student —</option>` +
     DATA.students.map(s => `<option value="${s.netid}">${studentLabel(s)}</option>`).join('');
   ['prefStuSel','backupStuSel','avoidStuSel'].forEach(id => document.getElementById(id).innerHTML = stuOpts);
   enhanceAllSelects();
+
+  function clearCombobox(selectId) {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    sel.value = '';
+    const input = sel.parentNode.querySelector('.combobox-input');
+    if (input) input.value = '';
+  }
+
+  // Clear each student combobox when clicked so the user can type fresh
+  ['prefStuSel','backupStuSel','avoidStuSel'].forEach(id => {
+    const input = document.getElementById(id)?.parentNode?.querySelector('.combobox-input');
+    if (input) input.addEventListener('focus', () => { input.value = ''; });
+  });
+
+  // Derive instructor's courses from existing responses (seeded or saved)
+  function myCoursesFor() {
+    const responses = getInstructorResponses();
+    const prefix = `${me.netid}::`;
+    return Object.keys(responses)
+      .filter(k => k.startsWith(prefix))
+      .map(k => DATA.courses.find(c => c.course_id === k.slice(prefix.length)))
+      .filter(c => c && c.allocTA === 'yes' && c.slots > 0)
+      .sort((a, b) => a.course_id.localeCompare(b.course_id));
+  }
+
+  function selectCourse(cid) {
+    fields.course_id = cid;
+    const course = DATA.courses.find(c => c.course_id === cid);
+    document.getElementById('i_course_info').textContent =
+      course ? `${course.course_id} — ${course.title} (${course.slots} slot${course.slots !== 1 ? 's' : ''})` : cid;
+    document.getElementById('courseFormPanel').style.display = 'block';
+    document.getElementById('courseFormBody').style.display = 'block';
+    loadForCourse();
+    renderCourseNav();
+  }
+
+  function renderCourseNav() {
+    const courses = myCoursesFor();
+    const responses = getInstructorResponses();
+    const el = document.getElementById('courseNav');
+
+    let html = `<h2 style="margin-top:0">My Courses</h2>`;
+    if (!courses.length) {
+      el.innerHTML = html + '<p class="muted small">No courses found.</p>';
+      return;
+    }
+    html += `<p class="muted small" style="margin-bottom:10px">Click a row to fill out TA preferences for that course.</p>
+      <table class="course-nav-table">
+        <thead><tr>
+          <th>Course</th><th>Title</th><th>Expected TA Slot</th><th>Pref. Students</th><th>Status</th>
+        </tr></thead><tbody>`;
+
+    courses.forEach(c => {
+      const isActive = fields.course_id === c.course_id;
+      // Use live state for the active course; saved data for others
+      let prefCount, courseReqs, coursePrefs;
+      if (isActive) {
+        prefCount   = state.prefStudents.length;
+        courseReqs  = fields.reqs  || '';
+        coursePrefs = fields.prefs || '';
+      } else {
+        const resp  = responses[`${me.netid}::${c.course_id}`];
+        prefCount   = resp?.state?.prefStudents?.length || 0;
+        courseReqs  = resp?.fields?.reqs  || '';
+        coursePrefs = resp?.fields?.prefs || '';
+      }
+
+      const threshold = Math.ceil(1.5 * c.slots);
+      const warns = [];
+      if (!courseReqs.trim() && !coursePrefs.trim())
+        warns.push(`<span class="cnav-warn">⚠ No preferences defined</span>`);
+      if (prefCount === 0)
+        warns.push(`<span class="cnav-warn">⚠ No preferred students added</span>`);
+      else if (prefCount < threshold)
+        warns.push(`<span class="cnav-warn">⚠ Only ${prefCount} student${prefCount !== 1 ? 's' : ''} (need ≥ ${threshold} for ${c.slots} slot${c.slots !== 1 ? 's' : ''})</span>`);
+
+      const statusCell = warns.length
+        ? warns.join('')
+        : `<span class="cnav-badge cnav-started">✓ Ready</span>`;
+
+      html += `<tr class="cnav-row${isActive ? ' cnav-active' : ''}" data-cid="${c.course_id}">
+        <td class="cnav-cid">${c.course_id}</td>
+        <td>${c.title}</td>
+        <td class="cnav-center">${c.slots}</td>
+        <td class="cnav-center">${prefCount > 0 ? prefCount : '—'}</td>
+        <td class="cnav-status">${statusCell}</td>
+      </tr>`;
+    });
+
+    html += '</tbody></table>';
+    el.innerHTML = html;
+
+    el.querySelectorAll('.cnav-row').forEach(row => {
+      row.addEventListener('click', () => selectCourse(row.dataset.cid));
+    });
+  }
 
   const state = {
     prefStudents: [],
@@ -251,10 +343,10 @@ function initInstructorForm(user) {
     renderSmart();
   }
 
-  courseSel.addEventListener('change', () => {
-    fields.course_id = courseSel.value;
-    loadForCourse();
-  });
+  // Initial render of nav; auto-select first course
+  renderCourseNav();
+  const _initial = myCoursesFor();
+  if (_initial.length) selectCourse(_initial[0].course_id);
 
   function chipFor(nid, warn=false, idx=null, len=0) {
     const s = DATA.students.find(x => x.netid === nid);
@@ -283,25 +375,129 @@ function initInstructorForm(user) {
       const i = arr.indexOf(x.dataset.nid);
       if (i >= 0) arr.splice(i, 1);
       renderAll();
+      scheduleSave();
     });
     el.querySelectorAll('.mv-btn:not(.mv-dis)').forEach(btn => btn.onclick = () => {
       const i = arr.indexOf(btn.dataset.nid);
       if (btn.dataset.dir === 'up' && i > 0) {
         [arr[i-1], arr[i]] = [arr[i], arr[i-1]];
-        flashNid = arr[i-1]; // item moved up to i-1
+        flashNid = arr[i-1];
       } else if (btn.dataset.dir === 'dn' && i < arr.length - 1) {
         [arr[i], arr[i+1]] = [arr[i+1], arr[i]];
-        flashNid = arr[i+1]; // item moved down to i+1
+        flashNid = arr[i+1];
       }
       renderAll();
       flashNid = null;
+      scheduleSave();
     });
   }
 
+  function renderPrefTable(arr) {
+    const el = document.getElementById('prefStuList');
+    if (!arr.length) {
+      el.innerHTML = '<div class="muted small">None added.</div>';
+      return;
+    }
+    const sResp = getStudentResponses();
+    const cid = fields.course_id;
+
+    let html = `<div class="pref-table-wrap"><table class="pref-table">
+      <thead><tr>
+        <th>#</th>
+        <th>Student</th>
+        <th>Year</th>
+        <th>Program</th>
+        <th>Guaranteed<span class="th-sub">Funding</span></th>
+        <th>Taken<span class="th-sub">Before</span></th>
+        <th>TA'd<span class="th-sub">Before</span></th>
+        <th>Student<span class="th-sub">Rank</span></th>
+        <th>Order</th>
+        <th></th>
+      </tr></thead><tbody>`;
+
+    arr.forEach((nid, i) => {
+      const s = DATA.students.find(x => x.netid === nid);
+      const r = sResp[nid];
+      const name = s ? s.name : nid;
+      const year = s ? `Y${s.year}` : '—';
+      const prog = s ? s.program : '—';
+      const progKey = prog.toLowerCase().replace(/[^a-z]/g, '');
+      const progCell = `<span class="prog-badge prog-${progKey}">${prog}</span>`;
+      const guarCell = s && isGuaranteed(s)
+        ? `<span class="guar-yes" title="Has funding guarantee">★ Yes</span>`
+        : `<span class="guar-no">—</span>`;
+      const takenObj = cid && r?.state?.taken?.[cid];
+      const takenCell = takenObj
+        ? `<span class="check-yes" title="${takenObj.sem} · ${takenObj.prof} · ${takenObj.grade}">✓ ${takenObj.grade}</span>`
+        : `<span class="check-no">—</span>`;
+      const tadRow = cid && r?.fields?.priorTARows?.find(x => x.course === cid);
+      const tadCell = tadRow
+        ? `<span class="check-yes" title="${tadRow.sem}${tadRow.prof ? ' · ' + tadRow.prof : ''}">✓ ${tadRow.sem || ''}</span>`
+        : `<span class="check-no">—</span>`;
+      const stuRank = cid && r?.state?.ranks?.[cid];
+      const rankCell = stuRank
+        ? `<span class="rank-badge rank-${stuRank}">${stuRank}</span>`
+        : `<span class="muted small">—</span>`;
+      const movedCls = nid === flashNid ? ' row-moved' : '';
+
+      html += `<tr class="${movedCls}" data-nid="${nid}">
+        <td class="col-pos">${i + 1}</td>
+        <td class="col-name">
+          <div class="stu-name">${name}</div>
+          <div class="stu-nid">${nid}</div>
+        </td>
+        <td>${year}</td>
+        <td>${progCell}</td>
+        <td>${guarCell}</td>
+        <td>${takenCell}</td>
+        <td>${tadCell}</td>
+        <td class="col-rank">${rankCell}</td>
+        <td>
+          <button class="mv-btn mv-up" data-nid="${nid}"${i === 0 ? ' disabled' : ''}>▲</button>
+          <button class="mv-btn mv-dn" data-nid="${nid}"${i === arr.length - 1 ? ' disabled' : ''}>▼</button>
+        </td>
+        <td><button class="x-btn" data-nid="${nid}" title="Remove">×</button></td>
+      </tr>`;
+    });
+
+    html += '</tbody></table></div>';
+    el.innerHTML = html;
+
+    el.querySelectorAll('.mv-up').forEach(btn => btn.addEventListener('click', () => {
+      const i = arr.indexOf(btn.dataset.nid);
+      if (i > 0) {
+        [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+        flashNid = arr[i - 1];
+      }
+      renderAll();
+      flashNid = null;
+      scheduleSave();
+    }));
+
+    el.querySelectorAll('.mv-dn').forEach(btn => btn.addEventListener('click', () => {
+      const i = arr.indexOf(btn.dataset.nid);
+      if (i < arr.length - 1) {
+        [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+        flashNid = arr[i + 1];
+      }
+      renderAll();
+      flashNid = null;
+      scheduleSave();
+    }));
+
+    el.querySelectorAll('.x-btn').forEach(btn => btn.addEventListener('click', () => {
+      const i = arr.indexOf(btn.dataset.nid);
+      if (i >= 0) arr.splice(i, 1);
+      renderAll();
+      scheduleSave();
+    }));
+  }
+
   function renderAll() {
-    renderList('prefStuList', state.prefStudents);
+    renderPrefTable(state.prefStudents);
     renderList('backupStuList', state.backupStudents);
     renderList('avoidStuList', state.avoidStudents, true, false);
+    renderCourseNav();
   }
 
   function addStudent(selId, arr) {
@@ -314,7 +510,9 @@ function initInstructorForm(user) {
       return;
     }
     if (!arr.includes(v)) arr.push(v);
+    clearCombobox(selId);
     renderAll();
+    scheduleSave();
   }
   document.getElementById('addPrefStu').onclick = () => addStudent('prefStuSel', state.prefStudents);
   document.getElementById('addBackupStu').onclick = () => addStudent('backupStuSel', state.backupStudents);
@@ -327,6 +525,7 @@ function initInstructorForm(user) {
       else if (k === 'reqs') fields.reqs = e.target.value;
       else if (k === 'prefs') fields.prefs = e.target.value;
       else if (k === 'area') fields.area = e.target.value;
+      scheduleSave();
     });
   });
 
@@ -339,6 +538,7 @@ function initInstructorForm(user) {
     if (!state.prefStudents.includes(nid)) {
       state.prefStudents.push(nid);
       renderAll();
+      scheduleSave();
     }
     renderSmart();
   }
@@ -399,15 +599,14 @@ function initInstructorForm(user) {
   const obs = new MutationObserver(renderSmart);
   obs.observe(document.getElementById('prefStuList'), { childList: true });
 
-  document.getElementById('saveBtn').addEventListener('click', () => {
-    if (!fields.course_id) {
-      alert('Pick a course first.');
-      return;
-    }
-    fields.thesis = document.getElementById('i_thesis').value;
-    fields.reqs = document.getElementById('i_reqs').value;
-    fields.prefs = document.getElementById('i_prefs').value;
-    fields.area = document.getElementById('i_area').value;
+  // Auto-save: debounced to at most once per second (mirrors student.html pattern)
+  let saveTimer = null;
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(doSave, 1000);
+  }
+  function doSave() {
+    if (!fields.course_id) return;
     saveInstructorResponse(key(), {
       instructor: me.netid,
       course_id: fields.course_id,
@@ -417,8 +616,7 @@ function initInstructorForm(user) {
     const st = document.getElementById('saveStatus');
     st.textContent = `Saved ${fields.course_id} ✓ ` + new Date().toLocaleTimeString();
     st.style.color = 'var(--good)';
-  });
-  document.getElementById('loadBtn').addEventListener('click', () => location.reload());
+  }
 
   renderAll();
   renderSmart();

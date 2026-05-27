@@ -6,7 +6,31 @@ const LS_KEYS = {
   STUDENT_RESPONSES: 'taa.studentResponses', // map netid -> response obj
   INSTRUCTOR_RESPONSES: 'taa.instructorResponses', // map courseId -> response obj
   COURSE_OVERRIDES: 'taa.courseOverrides', // map courseId -> { slots?, allocTA? }
+  DATA_VERSION: 'taa.dataVersion',
 };
+
+// Bump when the shape of seeded/stored data changes in a way that
+// requires wiping LocalStorage and re-seeding from scratch.
+const DATA_VERSION = 2;
+
+// Wipe all app-owned LocalStorage so the next page load re-seeds demo data.
+function resetAllDemoData() {
+  localStorage.removeItem(LS_KEYS.STUDENT_RESPONSES);
+  localStorage.removeItem(LS_KEYS.INSTRUCTOR_RESPONSES);
+  localStorage.removeItem(LS_KEYS.COURSE_OVERRIDES);
+  localStorage.removeItem(LS_KEYS.CURRENT_USER);
+  localStorage.removeItem(LS_KEYS.DATA_VERSION);
+}
+
+// If the stored data version is missing or stale, wipe app data and stamp the
+// current version so seeders rebuild on the next ensure* call.
+function enforceDataVersion() {
+  const stored = parseInt(localStorage.getItem(LS_KEYS.DATA_VERSION) || '0', 10);
+  if (stored !== DATA_VERSION) {
+    resetAllDemoData();
+    localStorage.setItem(LS_KEYS.DATA_VERSION, String(DATA_VERSION));
+  }
+}
 
 // Courses that by policy never get a TA, regardless of the TSV default.
 // Senior Thesis, 500-level, Independent Study (397/498/499), and CS124.
@@ -31,6 +55,7 @@ async function loadTSV(path) {
 }
 
 async function loadAllData() {
+  enforceDataVersion();
   const [courses, faculty, students] = await Promise.all([
     loadTSV('courses.tsv'),
     loadTSV('faculty.tsv'),
@@ -111,7 +136,7 @@ function buildSeededStudentResponse(student, courses, faculty) {
   // Course ranks: bias toward A/B in matching area, especially lower-level
   const ranks = {};
   const taken = {};
-  const priorTA = {};
+  const priorTARows = [];
   const aList = [];
   courses.forEach(c => {
     if (c.allocTA !== 'yes') return;
@@ -145,11 +170,11 @@ function buildSeededStudentResponse(student, courses, faculty) {
         };
       }
       if (rng() < 0.30) {
-        priorTA[c.course_id] = {
-          tad: true,
+        priorTARows.push({
+          course: c.course_id,
           sem: pickOne(rng, ['Fa23','Sp24','Fa24','Sp25']),
           prof: pickOne(rng, faculty).name.split(' ').slice(-1)[0]
-        };
+        });
       }
       if (grade === 'A') aList.push(c.course_id);
     }
@@ -184,9 +209,6 @@ function buildSeededStudentResponse(student, courses, faculty) {
     'F 1-3pm (advisor meeting)'
   ];
 
-  const priorTAStr = Object.entries(priorTA)
-    .map(([cid, v]) => `${cid} (${v.sem} w/ ${v.prof})`).join(', ');
-
   return {
     fields: {
       advisor: advisor ? advisor.name : '',
@@ -195,8 +217,8 @@ function buildSeededStudentResponse(student, courses, faculty) {
       guarantee,
       unavail: pickOne(rng, unavailOptions),
       cpp: cppLevels[cppIdx],
-      priorTAList: priorTAStr,
-      prevTA: Object.keys(priorTA).length > 0 || rng() < 0.25,
+      priorTARows,
+      prevTA: priorTARows.length > 0 || rng() < 0.25,
       appt: apptSel,
     },
     state: {
@@ -204,7 +226,6 @@ function buildSeededStudentResponse(student, courses, faculty) {
       avoidFaculty,
       ranks,
       taken,
-      priorTA,
       topFive,
     }
   };

@@ -404,6 +404,223 @@ table.courses tr:hover { background: #FFF6F2; }
 /* Header combobox lives on dark blue bar — keep it readable */
 .user-switch .combobox-input { min-width: 220px; }
 
+/* Currently-editing course display */
+.current-course-display {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--illinois-blue);
+  padding: 6px 0 7px;
+  border-bottom: 2px solid var(--illinois-orange);
+  min-height: 34px;
+}
+
+/* My Courses nav table */
+table.course-nav-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+table.course-nav-table th {
+  background: var(--illinois-blue);
+  color: #fff;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 7px 11px;
+  text-align: left;
+}
+table.course-nav-table td {
+  padding: 9px 11px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+table.course-nav-table tbody tr:last-child td { border-bottom: none; }
+.cnav-row {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.cnav-row:hover td { background: #FFF3EE; }
+.cnav-active td {
+  background: #EEF3FA !important;
+  border-left: 3px solid var(--illinois-orange);
+}
+.cnav-active td:not(:first-child) { border-left: none; }
+.cnav-active td:first-child { border-left: 3px solid var(--illinois-orange); padding-left: 9px; }
+.cnav-cid { font-weight: 700; color: var(--illinois-blue); white-space: nowrap; }
+.cnav-center { text-align: center; }
+.cnav-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.cnav-started { background: #E2F3E8; color: #1A6B32; }
+.cnav-empty   { background: #F2F2F2; color: #999; }
+.cnav-status  { white-space: normal; min-width: 180px; }
+.cnav-warn {
+  display: block;
+  font-size: 12px;
+  color: #92500A;
+  background: #FEF3CD;
+  border-left: 3px solid #E0A030;
+  padding: 2px 7px;
+  margin: 2px 0;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Preferred-student table */
+.pref-table-wrap {
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.09), 0 0 0 1px var(--border);
+  margin: 10px 0;
+}
+table.pref-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: #fff;
+}
+table.pref-table th, table.pref-table td {
+  text-align: left;
+  padding: 7px 11px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+table.pref-table th {
+  background: var(--illinois-blue);
+  color: white;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  vertical-align: bottom;
+  padding-top: 10px;
+  padding-bottom: 9px;
+}
+table.pref-table th .th-sub {
+  display: block;
+  font-weight: 400;
+  font-size: 10px;
+  letter-spacing: 0.2px;
+  text-transform: none;
+  opacity: 0.72;
+  margin-top: 2px;
+}
+table.pref-table tbody tr:last-child td { border-bottom: none; }
+table.pref-table tbody tr:nth-child(even) td { background: #F7F9FC; }
+table.pref-table tbody tr:hover td { background: #FFF3EE; transition: background 0.1s; }
+
+/* Position column */
+table.pref-table td.col-pos {
+  text-align: center;
+  width: 36px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--illinois-orange);
+  padding-right: 6px;
+}
+
+/* Name column */
+table.pref-table td.col-name { white-space: normal; min-width: 150px; }
+table.pref-table .stu-name { font-weight: 600; color: var(--illinois-blue); font-size: 13px; }
+table.pref-table .stu-nid  { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+/* Program badges */
+table.pref-table .prog-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+table.pref-table .prog-phd { background: #1D3D70; color: #fff; }
+table.pref-table .prog-ms  { background: #2A6E55; color: #fff; }
+table.pref-table .prog-msc { background: #2A6E55; color: #fff; }
+
+/* Guarantee badge */
+table.pref-table .guar-yes {
+  display: inline-block;
+  background: #E6F4EC;
+  color: #1A6B32;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+}
+table.pref-table .guar-no { color: #ccc; }
+
+/* Taken / TA'd badges */
+table.pref-table .check-yes {
+  display: inline-block;
+  background: #E6F4EC;
+  color: #1A6B32;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: default;
+}
+table.pref-table .check-no { color: #ccc; }
+
+/* Student-rank badges */
+table.pref-table td.col-rank { text-align: center; }
+table.pref-table .rank-badge {
+  display: inline-block;
+  padding: 3px 11px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 30px;
+  text-align: center;
+}
+table.pref-table .rank-A { background: #E2F3E8; color: #1A6B32; }
+table.pref-table .rank-B { background: #E0ECFB; color: #1D4DA8; }
+table.pref-table .rank-C { background: #FEF3CD; color: #92700A; }
+table.pref-table .rank-D { background: #F2F2F2; color: #999; }
+
+/* Move buttons */
+table.pref-table .mv-btn {
+  background: #fff;
+  border: 1px solid #d0d5de;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 7px;
+  line-height: 1;
+  color: var(--illinois-blue);
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+table.pref-table .mv-btn:hover:not(:disabled) {
+  background: var(--illinois-blue);
+  color: #fff;
+  border-color: var(--illinois-blue);
+}
+table.pref-table .mv-btn:disabled { opacity: 0.18; cursor: default; }
+
+/* Remove button */
+table.pref-table .x-btn {
+  background: none;
+  border: none;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 300;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color 0.12s;
+}
+table.pref-table .x-btn:hover { color: #B33A2C; }
+
+@keyframes row-flash {
+  0%   { background: #fde68a !important; }
+  60%  { background: #fde68a !important; }
+  100% { background: inherit; }
+}
+table.pref-table tr.row-moved td { animation: row-flash 0.5s ease-out forwards; }
+
 footer {
   text-align: center;
   padding: 20px;

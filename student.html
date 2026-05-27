@@ -35,6 +35,102 @@ tr.course-detail-row td {
 .course-detail-content b {
   color: var(--illinois-blue);
 }
+table.prior-ta {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+}
+table.prior-ta th, table.prior-ta td {
+  border: 1px solid var(--border);
+  padding: 4px 6px;
+  text-align: left;
+  vertical-align: middle;
+}
+table.prior-ta th {
+  background: #f3f3f3;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+table.prior-ta input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 2px 4px;
+  font: inherit;
+  box-sizing: border-box;
+}
+table.prior-ta input:focus {
+  outline: 1px solid var(--illinois-blue);
+  background: #fff;
+}
+table.prior-ta td.actions {
+  width: 32px;
+  text-align: center;
+}
+table.prior-ta button.row-del {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1.1em;
+  padding: 0 4px;
+}
+table.prior-ta button.row-del:hover {
+  color: var(--bad, #c00);
+}
+#priorTA_add {
+  margin-top: 6px;
+}
+.top5-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.top5-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: #f8f8f8;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.top5-num {
+  font-weight: bold;
+  min-width: 22px;
+  color: var(--illinois-blue);
+  flex-shrink: 0;
+}
+.top5-name {
+  flex: 1;
+  font-size: 0.9em;
+}
+.top5-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.85em;
+  padding: 1px 6px;
+  line-height: 1.5;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.top5-btn:hover:not(:disabled) {
+  background: var(--illinois-blue);
+  color: #fff;
+  border-color: var(--illinois-blue);
+}
+.top5-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.top5-rm:hover:not(:disabled) {
+  background: var(--bad, #c00) !important;
+  border-color: var(--bad, #c00) !important;
+  color: #fff !important;
+}
 </style>
 </head>
 <body>
@@ -134,7 +230,18 @@ tr.course-detail-row td {
       </div>
 
       <label>Classes you have already TA'd here at UIUC</label>
-      <textarea id="f_priorTA" placeholder="e.g. CS 225 (Fa23 w/ Mattox), CS 374 (Sp24 w/ Erickson)"></textarea>
+      <table class="prior-ta" id="priorTA_table">
+        <thead>
+          <tr>
+            <th style="width:30%">Course</th>
+            <th style="width:25%">Semester</th>
+            <th>Professor</th>
+            <th class="actions"></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button type="button" class="btn secondary" id="priorTA_add">+ Add row</button>
     </div>
 
     <div class="panel">
@@ -146,12 +253,13 @@ tr.course-detail-row td {
       </p>
 
       <div class="filters">
-        <input type="text" id="courseFilter" class="search-input" placeholder="Filter by course id or title..." />
+        <input type="text" id="courseFilter" class="search-input" placeholder="Filter by course id, title, or professor..." />
         <label><input type="checkbox" id="filter100" checked /> 100</label>
         <label><input type="checkbox" id="filter200" checked /> 200</label>
         <label><input type="checkbox" id="filter300" checked /> 300</label>
         <label><input type="checkbox" id="filter400" checked /> 400</label>
         <label><input type="checkbox" id="filterAB" /> Show only A/B</label>
+        <label><input type="checkbox" id="filterPriorTA" /> TA'd before</label>
       </div>
 
       <div style="overflow:auto; max-height:520px; border:1px solid var(--border);">
@@ -199,8 +307,6 @@ tr.course-detail-row td {
     </div>
 
     <div class="toolbar">
-      <button class="btn" id="saveBtn">Save my response</button>
-      <button class="btn ghost" id="loadBtn">Reload saved</button>
       <span id="saveStatus" class="muted"></span>
     </div>
   </div>
@@ -255,13 +361,16 @@ function initStudentForm(user) {
     avoidFaculty: [],
     ranks: {}, // course_id -> A|B|C|F
     taken: {}, // course_id -> {sem, prof, grade}
-    priorTA: {}, // course_id -> {sem, prof}
-    topFive: ['','','','',''],
+    topFive: [],
   };
 
   // Load existing
   const saved = getStudentResponses()[me.netid];
-  if (saved) Object.assign(state, saved.state || {});
+  if (saved) {
+    Object.assign(state, saved.state || {});
+    // Normalize: old format was ['','','','',''] with empty strings as placeholders
+    state.topFive = (state.topFive || []).filter(x => x);
+  }
 
   function renderFacChips(target, list, warn=false) {
     const el = document.getElementById(target);
@@ -273,6 +382,7 @@ function initStudentForm(user) {
       const i = list.indexOf(x.dataset.nid);
       if (i >= 0) list.splice(i, 1);
       renderFacChips(target, list, warn);
+      scheduleSave();
     });
   }
   renderFacChips('avoidFacList', state.avoidFaculty, true);
@@ -282,8 +392,19 @@ function initStudentForm(user) {
     if (v && !state.avoidFaculty.includes(v)) {
       state.avoidFaculty.push(v);
       renderFacChips('avoidFacList', state.avoidFaculty, true);
+      scheduleSave();
     }
   };
+
+  // Prior TA rows (declared here so renderRows can read it)
+  let priorTARows = [];
+  function normalizeCourseId(s) {
+    return (s||'').toUpperCase().replace(/\s+/g, '').trim();
+  }
+  function priorTAFor(course_id) {
+    const target = normalizeCourseId(course_id);
+    return priorTARows.filter(r => normalizeCourseId(r.course) === target);
+  }
 
   // Courses table
   const tbody = document.querySelector('#coursesTable tbody');
@@ -322,20 +443,26 @@ function initStudentForm(user) {
       400: document.getElementById('filter400').checked,
     };
     const onlyAB = document.getElementById('filterAB').checked;
+    const onlyPriorTA = document.getElementById('filterPriorTA').checked;
     const filtered = DATA.courses.filter(c => {
       if (c.allocTA !== 'yes') return false;
       if (!showLvl[c.level]) return false;
-      if (filter && !(`${c.course_id} ${c.title}`.toLowerCase().includes(filter))) return false;
+      if (filter) {
+        const instr = instrLookup[c.course_id] || {};
+        const haystack = `${c.course_id} ${c.title} ${instr.name || ''} ${instr.email || ''}`.toLowerCase();
+        if (!haystack.includes(filter)) return false;
+      }
       if (onlyAB) {
         const r = rankFor(c);
         if (r !== 'A' && r !== 'B') return false;
       }
+      if (onlyPriorTA && priorTAFor(c.course_id).length === 0) return false;
       return true;
     });
     tbody.innerHTML = filtered.map(c => {
       const r = rankFor(c);
       const taken = state.taken[c.course_id] || {};
-      const prior = state.priorTA[c.course_id] || {};
+      const priorMatches = priorTAFor(c.course_id);
       const needsDetails = (r === 'A' || r === 'B');
       const instr = instrLookup[c.course_id];
       const instrHTML = instr
@@ -343,7 +470,7 @@ function initStudentForm(user) {
         : '';
       const hasReqsInfo = instr && (instr.reqs || instr.prefs);
       const detailHTML = hasReqsInfo ? `
-        <tr class="course-detail-row" data-cid="${c.course_id}" style="display:none">
+        <tr class="course-detail-row" data-cid="${c.course_id}" >
           <td colspan="6">
             <div class="course-detail-content">
               ${instr.reqs ? `<div><b>Requirements:</b> ${instr.reqs}</div>` : ''}
@@ -375,34 +502,27 @@ function initStudentForm(user) {
             </div>` : '<span class="muted small">—</span>'}
         </td>
         <td>
-          ${needsDetails ? `
-            <label class="checkline"><input type="checkbox" class="ta-cb" ${prior.tad?'checked':''}/> Prior TA</label>
-            <div class="ta-detail" style="display:${prior.tad?'block':'none'}">
-              <input type="text" class="ta-sem" placeholder="Sem/Yr" value="${prior.sem||''}" style="width:80px"/>
-              <input type="text" class="ta-prof" placeholder="Prof" value="${prior.prof||''}" style="width:90px"/>
-            </div>` : '<span class="muted small">—</span>'}
+          ${priorMatches.length
+            ? priorMatches.map(p => {
+                const bits = [p.sem, p.prof].filter(Boolean).join(' w/ ');
+                return `<div class="small">✓ ${bits || 'Prior TA'}</div>`;
+              }).join('')
+            : '<span class="muted small">—</span>'}
         </td>
       </tr>${detailHTML}`;
-    }).join('');
-    // Wire click-to-toggle detail rows
-    tbody.querySelectorAll('tr.course-main-row').forEach(tr => {
-      const cid = tr.dataset.cid;
-      const detailRow = tbody.querySelector(`tr.course-detail-row[data-cid="${cid}"]`);
-      if (detailRow) {
-        tr.addEventListener('click', e => {
-          if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL' || e.target.tagName === 'A') return;
-          detailRow.style.display = detailRow.style.display === 'none' ? '' : 'none';
-        });
-      }
-    });
+    }).join('');   
     // Wire change events
     tbody.querySelectorAll('tr.course-main-row').forEach(tr => {
       const cid = tr.dataset.cid;
       tr.querySelectorAll(`input[name="rank-${cid}"]`).forEach(r => {
         r.addEventListener('change', () => {
           state.ranks[cid] = r.value;
+          if (r.value === 'A' && state.topFive.length < 5 && !state.topFive.includes(cid)) {
+            state.topFive.push(cid);
+          }
           renderRows();
           renderTopFive();
+          scheduleSave();
         });
       });
       const tookCb = tr.querySelector('.took-cb');
@@ -410,30 +530,19 @@ function initStudentForm(user) {
         state.taken[cid] = state.taken[cid] || {};
         state.taken[cid].took = tookCb.checked;
         tr.querySelector('.took-detail').style.display = tookCb.checked ? 'block' : 'none';
+        scheduleSave();
       });
       ['sem','prof','grade'].forEach(k => {
         const el = tr.querySelector('.took-'+k);
         if (el) el.addEventListener('input', () => {
           state.taken[cid] = state.taken[cid] || {};
           state.taken[cid][k] = el.value;
-        });
-      });
-      const taCb = tr.querySelector('.ta-cb');
-      if (taCb) taCb.addEventListener('change', () => {
-        state.priorTA[cid] = state.priorTA[cid] || {};
-        state.priorTA[cid].tad = taCb.checked;
-        tr.querySelector('.ta-detail').style.display = taCb.checked ? 'block' : 'none';
-      });
-      ['sem','prof'].forEach(k => {
-        const el = tr.querySelector('.ta-'+k);
-        if (el) el.addEventListener('input', () => {
-          state.priorTA[cid] = state.priorTA[cid] || {};
-          state.priorTA[cid][k] = el.value;
+          scheduleSave();
         });
       });
     });
   }
-  ['courseFilter','filter100','filter200','filter300','filter400','filterAB'].forEach(id => {
+  ['courseFilter','filter100','filter200','filter300','filter400','filterAB','filterPriorTA'].forEach(id => {
     document.getElementById(id).addEventListener('input', renderRows);
     document.getElementById(id).addEventListener('change', renderRows);
   });
@@ -442,28 +551,134 @@ function initStudentForm(user) {
   function renderTopFive() {
     const aCourses = DATA.courses.filter(c => c.allocTA === 'yes' && state.ranks[c.course_id] === 'A');
     const container = document.getElementById('topFiveContainer');
+
+    // Remove any entries that are no longer A-ranked
+    state.topFive = state.topFive.filter(cid => aCourses.some(c => c.course_id === cid));
+
     if (!aCourses.length) {
       container.innerHTML = '<div class="muted small">Rank some courses as <b>A</b> to populate this list.</div>';
       return;
     }
-    container.innerHTML = state.topFive.map((sel, idx) => `
-      <div class="row" style="align-items:center; margin:4px 0">
-        <div style="flex:0 0 30px"><b>${idx+1}.</b></div>
-        <select data-idx="${idx}" class="topPick">
-          <option value="">— Select —</option>
-          ${aCourses.map(c => `<option value="${c.course_id}" ${sel===c.course_id?'selected':''}>${c.course_id} — ${c.title}</option>`).join('')}
+
+    const count = state.topFive.length;
+    const available = aCourses.filter(c => !state.topFive.includes(c.course_id));
+
+    let html = '<div class="top5-list">';
+    if (count === 0) {
+      html += '<div class="muted small">No courses added yet.</div>';
+    } else {
+      state.topFive.forEach((cid, idx) => {
+        const c = aCourses.find(x => x.course_id === cid);
+        html += `<div class="top5-item">
+          <span class="top5-num">${idx + 1}.</span>
+          <span class="top5-name">${cid}${c ? ' — ' + c.title : ''}</span>
+          <button type="button" class="top5-btn top5-up" data-idx="${idx}" ${idx === 0 ? 'disabled' : ''} title="Move up">&uarr;</button>
+          <button type="button" class="top5-btn top5-dn" data-idx="${idx}" ${idx === count - 1 ? 'disabled' : ''} title="Move down">&darr;</button>
+          <button type="button" class="top5-btn top5-rm" data-idx="${idx}" title="Remove">&times;</button>
+        </div>`;
+      });
+    }
+    html += '</div>';
+
+    if (count < 5 && available.length > 0) {
+      html += `<div class="row" style="align-items:center; margin-top:6px; gap:6px">
+        <select id="top5AddSel" style="flex:1">
+          <option value="">— Add a course (${5 - count} slot${count === 4 ? '' : 's'} remaining) —</option>
+          ${available.map(c => `<option value="${c.course_id}">${c.course_id} — ${c.title}</option>`).join('')}
         </select>
-      </div>
-    `).join('');
-    container.querySelectorAll('.topPick').forEach(sel => {
-      sel.addEventListener('change', () => {
-        state.topFive[parseInt(sel.dataset.idx,10)] = sel.value;
+        <button type="button" class="btn secondary" id="top5AddBtn" style="flex:0 0 auto">Add</button>
+      </div>`;
+    } else if (count >= 5) {
+      html += '<div class="muted small" style="margin-top:4px">Maximum of 5 courses reached.</div>';
+    } else {
+      html += '<div class="muted small" style="margin-top:4px">All A-ranked courses are already listed.</div>';
+    }
+
+    container.innerHTML = html;
+
+    container.querySelectorAll('.top5-up').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = parseInt(btn.dataset.idx, 10);
+        if (i > 0) {
+          [state.topFive[i - 1], state.topFive[i]] = [state.topFive[i], state.topFive[i - 1]];
+          renderTopFive();
+          scheduleSave();
+        }
       });
     });
+    container.querySelectorAll('.top5-dn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const i = parseInt(btn.dataset.idx, 10);
+        if (i < state.topFive.length - 1) {
+          [state.topFive[i], state.topFive[i + 1]] = [state.topFive[i + 1], state.topFive[i]];
+          renderTopFive();
+          scheduleSave();
+        }
+      });
+    });
+    container.querySelectorAll('.top5-rm').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.topFive.splice(parseInt(btn.dataset.idx, 10), 1);
+        renderTopFive();
+        scheduleSave();
+      });
+    });
+    const addBtn = container.querySelector('#top5AddBtn');
+    if (addBtn) {
+      addBtn.addEventListener('click', () => {
+        const sel = container.querySelector('#top5AddSel');
+        const v = sel && sel.value;
+        if (v && state.topFive.length < 5 && !state.topFive.includes(v)) {
+          state.topFive.push(v);
+          renderTopFive();
+          scheduleSave();
+        }
+      });
+    }
   }
 
   renderRows();
   renderTopFive();
+
+  // Prior TA table
+  const priorTbody = document.querySelector('#priorTA_table tbody');
+  function renderPriorTA() {
+    if (!priorTARows.length) {
+      priorTbody.innerHTML = `<tr><td colspan="4" class="muted small" style="text-align:center; padding:8px">No classes added. Click "+ Add row" to begin.</td></tr>`;
+      return;
+    }
+    priorTbody.innerHTML = priorTARows.map((row, i) => `
+      <tr>
+        <td><input type="text" data-idx="${i}" data-k="course" value="${(row.course||'').replace(/"/g,'&quot;')}" placeholder="e.g. CS 225" /></td>
+        <td><input type="text" data-idx="${i}" data-k="sem" value="${(row.sem||'').replace(/"/g,'&quot;')}" placeholder="e.g. Fa23" /></td>
+        <td><input type="text" data-idx="${i}" data-k="prof" value="${(row.prof||'').replace(/"/g,'&quot;')}" placeholder="e.g. Mattox" /></td>
+        <td class="actions"><button type="button" class="row-del" data-idx="${i}" title="Delete row">×</button></td>
+      </tr>
+    `).join('');
+    priorTbody.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const idx = parseInt(inp.dataset.idx, 10);
+        priorTARows[idx][inp.dataset.k] = inp.value;
+        renderRows();
+        scheduleSave();
+      });
+    });
+    priorTbody.querySelectorAll('button.row-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        priorTARows.splice(parseInt(btn.dataset.idx, 10), 1);
+        renderPriorTA();
+        renderRows();
+        scheduleSave();
+      });
+    });
+  }
+  document.getElementById('priorTA_add').addEventListener('click', () => {
+    priorTARows.push({ course: '', sem: '', prof: '' });
+    renderPriorTA();
+    const inputs = priorTbody.querySelectorAll('tr:last-child input');
+    if (inputs.length) inputs[0].focus();
+    scheduleSave();
+  });
 
   // Restore form scalars
   if (saved && saved.fields) {
@@ -472,7 +687,9 @@ function initStudentForm(user) {
     if (f.eligible) document.getElementById('f_eligible').value = f.eligible;
     if (f.guarantee) document.getElementById('f_guarantee').value = f.guarantee;
     if (f.unavail) document.getElementById('f_unavail').value = f.unavail;
-    if (f.priorTAList) document.getElementById('f_priorTA').value = f.priorTAList;
+    if (Array.isArray(f.priorTARows)) {
+      priorTARows = f.priorTARows.map(r => ({ course: r.course||'', sem: r.sem||'', prof: r.prof||'' }));
+    }
     if (typeof f.prevTA === 'boolean') document.getElementById('f_prevTA').checked = f.prevTA;
     if (f.cpp) {
       const r = document.querySelector(`input[name="cpp"][value="${f.cpp}"]`);
@@ -483,8 +700,16 @@ function initStudentForm(user) {
       if (r) r.checked = true;
     }
   }
+  renderPriorTA();
+  renderRows();
 
-  document.getElementById('saveBtn').addEventListener('click', () => {
+  // Auto-save: debounced to at most once per second
+  let saveTimer = null;
+  function scheduleSave() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(doSave, 1000);
+  }
+  function doSave() {
     const fields = {
       advisor: document.getElementById('f_advisor').value,
       area: document.getElementById('f_area').value,
@@ -492,7 +717,7 @@ function initStudentForm(user) {
       guarantee: document.getElementById('f_guarantee').value,
       unavail: document.getElementById('f_unavail').value,
       cpp: (document.querySelector('input[name="cpp"]:checked')||{}).value || '',
-      priorTAList: document.getElementById('f_priorTA').value,
+      priorTARows: priorTARows.filter(r => (r.course||r.sem||r.prof||'').trim()),
       prevTA: document.getElementById('f_prevTA').checked,
       appt: (document.querySelector('input[name="appt"]:checked')||{}).value || '50pref',
     };
@@ -500,8 +725,17 @@ function initStudentForm(user) {
     const st = document.getElementById('saveStatus');
     st.textContent = 'Saved ✓ ' + new Date().toLocaleTimeString();
     st.style.color = 'var(--good)';
+  }
+
+  // Wire auto-save to all "about you" fields
+  ['f_advisor','f_area','f_eligible','f_guarantee','f_unavail','f_prevTA'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', scheduleSave);
+    el.addEventListener('change', scheduleSave);
   });
-  document.getElementById('loadBtn').addEventListener('click', () => location.reload());
+  document.querySelectorAll('input[name="cpp"], input[name="appt"]').forEach(r => {
+    r.addEventListener('change', scheduleSave);
+  });
 }
 </script>
 </body>

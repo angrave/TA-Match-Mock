@@ -100,9 +100,7 @@
 
   document.getElementById('clearBtn').addEventListener('click', () => {
     if (confirm('Clear all locally-stored TA matching data? This cannot be undone.')) {
-      localStorage.removeItem(LS_KEYS.STUDENT_RESPONSES);
-      localStorage.removeItem(LS_KEYS.INSTRUCTOR_RESPONSES);
-      localStorage.removeItem(LS_KEYS.COURSE_OVERRIDES);
+      resetAllDemoData();
       location.reload();
     }
   });

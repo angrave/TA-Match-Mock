@@ -204,17 +204,35 @@ function initInstructorForm(user) {
   });
 
   // Tab switching
+  function activateTab(tabName) {
+    const btn = document.querySelector(`.form-tab-btn[data-tab="${tabName}"]`);
+    if (!btn) return;
+    document.querySelectorAll('.form-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.tab-section').forEach(s => s.style.display = 'none');
+    const section = document.getElementById(`tab-${tabName}`);
+    if (!section) return;
+    section.style.display = 'block';
+    section.classList.remove('tab-section');
+    void section.offsetWidth;
+    section.classList.add('tab-section');
+  }
+
   document.querySelectorAll('.form-tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab;
-      document.querySelectorAll('.form-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
-      document.querySelectorAll('.tab-section').forEach(s => s.style.display = 'none');
-      const section = document.getElementById(`tab-${tab}`);
-      section.style.display = 'block';
-      section.classList.remove('tab-section');
-      void section.offsetWidth;
-      section.classList.add('tab-section');
-    });
+    btn.addEventListener('click', () => activateTab(btn.dataset.tab));
+  });
+
+  function tabFromHash(hash) {
+    if (hash === '#CourseReq') return 'requirements';
+    if (hash === '#TAPref') return 'preferences';
+    return null;
+  }
+
+  const initialTab = tabFromHash(window.location.hash);
+  if (initialTab) activateTab(initialTab);
+
+  window.addEventListener('hashchange', () => {
+    const tab = tabFromHash(window.location.hash);
+    if (tab) activateTab(tab);
   });
 
   const stuOpts = `<option value="">— Select student —</option>` +

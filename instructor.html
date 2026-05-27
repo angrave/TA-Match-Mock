@@ -54,25 +54,9 @@
     <!-- My courses nav -->
     <div class="panel" id="courseNav"></div>
 
-    <!-- Always-visible about panel -->
-    <div class="panel" id="courseFormPanel" style="display:none">
-      <h2>About this class</h2>
-      <div class="row">
-        <div>
-          <label>Instructor</label>
-          <input type="text" id="i_name" readonly />
-        </div>
-        <div>
-          <label>NetID</label>
-          <input type="text" id="i_netid" readonly />
-        </div>
-      </div>
-      <div class="row">
-        <div>
-          <label>Currently editing</label>
-          <div id="i_course_info" class="current-course-display">—</div>
-        </div>
-      </div>
+    <!-- Course identity (hidden, used by JS) -->
+    <div id="courseFormPanel" style="display:none">
+      <div id="i_course_info" style="display:none"></div>
     </div>
 
     <div id="courseFormBody" style="display:none">
@@ -94,14 +78,15 @@
         </p>
         <div class="row" style="margin-bottom:1rem">
           <div>
-            <label>Research area for this course</label>
+            <label>Primary research area for this course</label>
             <select id="i_area">
               <option value="">— Select —</option>
-              <option>AI</option><option>DAIS</option><option>Theory</option>
-              <option>Architecture</option><option>Systems</option><option>Security</option>
-              <option>Graphics</option><option>PL</option><option>SE</option>
-              <option>SciComp</option><option>Parallel</option><option>Bioinformatics</option>
-              <option>Robotics</option><option>General</option>
+              <option>N/A</option>
+              <option>AI</option><option>Architecture</option><option>Bioinformatics</option>
+              <option>DAIS</option><option>General</option><option>Graphics</option>
+              <option>Parallel</option><option>PL</option><option>Robotics</option>
+              <option>SciComp</option><option>SE</option><option>Security</option>
+              <option>Systems</option><option>Theory</option>
             </select>
           </div>
         </div>
@@ -192,9 +177,6 @@ function studentLabel(s) {
 
 function initInstructorForm(user) {
   const me = DATA.faculty.find(f => f.netid === user.netid);
-  document.getElementById('i_name').value = me.name;
-  document.getElementById('i_netid').value = me.netid;
-
   // Instructor-level state (not per-course)
   const instrKey = `${me.netid}::__instructor__`;
   const instrState = { avoidStudents: [] };
@@ -266,9 +248,6 @@ function initInstructorForm(user) {
 
   function selectCourse(cid) {
     fields.course_id = cid;
-    const course = DATA.courses.find(c => c.course_id === cid);
-    document.getElementById('i_course_info').textContent =
-      course ? `${course.course_id} — ${course.title} (${course.slots} slot${course.slots !== 1 ? 's' : ''})` : cid;
     document.getElementById('courseFormPanel').style.display = 'block';
     document.getElementById('courseFormBody').style.display = 'block';
     loadForCourse();
@@ -294,20 +273,24 @@ function initInstructorForm(user) {
     courses.forEach(c => {
       const isActive = fields.course_id === c.course_id;
       // Use live state for the active course; saved data for others
-      let prefCount, courseReqs, coursePrefs;
+      let prefCount, courseReqs, coursePrefs, courseArea;
       if (isActive) {
         prefCount   = state.prefStudents.length;
         courseReqs  = fields.reqs  || '';
         coursePrefs = fields.prefs || '';
+        courseArea  = fields.area  || '';
       } else {
         const resp  = responses[`${me.netid}::${c.course_id}`];
         prefCount   = resp?.state?.prefStudents?.length || 0;
         courseReqs  = resp?.fields?.reqs  || '';
         coursePrefs = resp?.fields?.prefs || '';
+        courseArea  = resp?.fields?.area  || '';
       }
 
       const threshold = Math.ceil(1.5 * c.slots);
       const warns = [];
+      if (!courseArea.trim())
+        warns.push(`<span class="cnav-warn">⚠ No research area set</span>`);
       if (!courseReqs.trim() && !coursePrefs.trim())
         warns.push(`<span class="cnav-warn">⚠ No preferences defined</span>`);
       if (prefCount === 0)
@@ -376,11 +359,11 @@ function initInstructorForm(user) {
   const _initial = myCoursesFor();
   if (_initial.length) selectCourse(_initial[0].course_id);
 
-  function chipFor(nid, warn=false, idx=null, len=0) {
+  function chipFor(nid, warn=false, idx=null, len=0, showBadges=true) {
     const s = DATA.students.find(x => x.netid === nid);
     let label = s ? `${s.name} (${nid})` : nid;
     let badges = '';
-    if (s) {
+    if (s && showBadges) {
       if (isGuaranteed(s)) badges += ' <span class="num" title="Has funding guarantee">★</span>';
       else if (s.program === 'PhD') badges += ' <span class="num" title="PhD without funding guarantee (typically past year 5)">!</span>';
       else if (isMastersProgram(s.program)) badges += ` <span class="num" title="${s.program} — not guaranteed support">${s.program}</span>`;
@@ -395,9 +378,9 @@ function initInstructorForm(user) {
     return `<span class="chip${movedCls} ${warn?'warn':''}">${idx!==null?`<span class="num">${idx+1}</span>`:''} ${label}${badges}${moveButtons} <span class="x" data-nid="${nid}">×</span></span>`;
   }
 
-  function renderList(targetId, arr, warn=false, ordered=true, saveFn=scheduleSave) {
+  function renderList(targetId, arr, warn=false, ordered=true, saveFn=scheduleSave, showBadges=true) {
     const el = document.getElementById(targetId);
-    el.innerHTML = arr.length ? arr.map((n, i) => chipFor(n, warn, ordered?i:null, arr.length)).join('')
+    el.innerHTML = arr.length ? arr.map((n, i) => chipFor(n, warn, ordered?i:null, arr.length, showBadges)).join('')
       : '<span class="muted small">None added.</span>';
     el.querySelectorAll('.x').forEach(x => x.onclick = () => {
       const i = arr.indexOf(x.dataset.nid);
@@ -522,7 +505,7 @@ function initInstructorForm(user) {
   }
 
   function renderAvoidList() {
-    renderList('avoidStuList', instrState.avoidStudents, true, false, saveInstructorLevel);
+    renderList('avoidStuList', instrState.avoidStudents, true, false, saveInstructorLevel, false);
   }
 
   function renderAll() {
@@ -556,6 +539,7 @@ function initInstructorForm(user) {
       if (k === 'reqs') fields.reqs = e.target.value;
       else if (k === 'prefs') fields.prefs = e.target.value;
       else if (k === 'area') fields.area = e.target.value;
+      renderCourseNav();
       scheduleSave();
     });
   });

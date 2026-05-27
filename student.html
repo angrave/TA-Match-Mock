@@ -428,6 +428,7 @@ function initStudentForm(user) {
         email: `${instrNetid}@illinois.edu`,
         reqs: (resp.fields && resp.fields.reqs) || '',
         prefs: (resp.fields && resp.fields.prefs) || '',
+        area: (resp.fields && resp.fields.area) || '',
       };
     }
     return lookup;
@@ -468,11 +469,13 @@ function initStudentForm(user) {
       const instrHTML = instr
         ? `<div class="course-instr">${instr.name} &middot; <a href="mailto:${instr.email}" onclick="event.stopPropagation()">${instr.email}</a></div>`
         : '';
-      const hasReqsInfo = instr && (instr.reqs || instr.prefs);
+      const showArea = instr && instr.area && instr.area !== 'N/A';
+      const hasReqsInfo = instr && (instr.reqs || instr.prefs || showArea);
       const detailHTML = hasReqsInfo ? `
         <tr class="course-detail-row" data-cid="${c.course_id}" >
           <td colspan="6">
             <div class="course-detail-content">
+              ${showArea ? `<div><b>Research area:</b> ${instr.area}</div>` : ''}
               ${instr.reqs ? `<div><b>Requirements:</b> ${instr.reqs}</div>` : ''}
               ${instr.prefs ? `<div><b>Preferred:</b> ${instr.prefs}</div>` : ''}
             </div>

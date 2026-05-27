@@ -399,7 +399,7 @@ function buildSeededInstructorResponse(course, instructor, students, rng) {
     course_id: course.course_id,
     fields: {
       course_id: course.course_id,
-      area: course.area,
+      area: course.level < 400 ? 'N/A' : course.area,
       thesis: thesisStr,
       reqs: entry.reqs,
       prefs: entry.prefs,

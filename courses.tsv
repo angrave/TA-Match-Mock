@@ -81,3 +81,15 @@ CS498-AC	Special Topics: Applied Cryptography	400	1	Security	yes
 CS498-DS	Special Topics: Data Science Practicum	400	1	DAIS	yes
 CS498-HC	Special Topics: Human-Computer Interaction	400	1	Graphics	yes
 CS499	Senior Thesis	400	0	General	no
+CS510	Advanced Algorithms Seminar	500	1	Theory	yes
+CS511	Topics in Programming Languages	500	1	PL	yes
+CS512	Graduate Operating Systems Seminar	500	1	Systems	yes
+CS513	Security Research Seminar	500	1	Security	yes
+CS514	Advanced Machine Learning Seminar	500	1	AI	yes
+CS515	Parallel Computing Research Seminar	500	1	Parallel	yes
+CS516	Graduate Data Systems Seminar	500	1	DAIS	yes
+CS517	Scientific Computing Research Seminar	500	1	SciComp	yes
+CS518	Advanced Computer Architecture Seminar	500	1	Architecture	yes
+CS519	Graduate Robotics Seminar	500	1	Robotics	yes
+CS520	Bioinformatics Research Seminar	500	1	Bioinformatics	yes
+CS521	Software Engineering Research Seminar	500	1	SE	yes

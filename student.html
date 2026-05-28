@@ -131,6 +131,26 @@ table.prior-ta button.row-del:hover {
   border-color: var(--bad, #c00) !important;
   color: #fff !important;
 }
+.prof-ac-dropdown {
+  position: fixed;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+  z-index: 9999;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.prof-ac-item {
+  padding: 5px 10px;
+  font-size: 0.87em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.prof-ac-item:hover, .prof-ac-item.ac-active {
+  background: var(--illinois-blue, #13294b);
+  color: #fff;
+}
 </style>
 </head>
 <body>
@@ -247,9 +267,10 @@ table.prior-ta button.row-del:hover {
     <div class="panel">
       <h2>Course preferences</h2>
       <p class="muted">
-        Courses at the 400-level (marked <span class="req-tag">REQ</span>) have explicit requirements;
+        Courses at the 400-level or higher (marked <span class="req-tag">REQ</span>) have explicit requirements;
         the default rank for those is <b>F</b>. For lower courses, the default rank is <b>C</b>.
         Choose <b>A</b> (most desired), <b>B</b> (moderate), <b>C</b> (least preferred), or <b>F</b> (no background).
+        You may rank at most <b>5</b> courses as <b>A</b>.
       </p>
 
       <div class="filters">
@@ -258,16 +279,26 @@ table.prior-ta button.row-del:hover {
         <label><input type="checkbox" id="filter200" checked /> 200</label>
         <label><input type="checkbox" id="filter300" checked /> 300</label>
         <label><input type="checkbox" id="filter400" checked /> 400</label>
+        <label><input type="checkbox" id="filter500" checked /> 500</label>
         <label><input type="checkbox" id="filterAB" /> Show only A/B</label>
         <label><input type="checkbox" id="filterPriorTA" /> TA'd before</label>
+        <select id="filterArea" class="search-input" style="font-size:0.9em;padding:2px 4px">
+          <option value="">All areas</option>
+          <option>AI</option><option>Architecture</option><option>Bioinformatics</option>
+          <option>DAIS</option><option>General</option><option>Graphics</option>
+          <option>Parallel</option><option>PL</option><option>Robotics</option>
+          <option>SciComp</option><option>SE</option><option>Security</option>
+          <option>Systems</option><option>Theory</option>
+        </select>
+        <span id="rankSummary" class="muted small" style="margin-left:auto;white-space:nowrap"></span>
       </div>
 
       <div style="overflow:auto; max-height:520px; border:1px solid var(--border);">
         <table class="courses" id="coursesTable">
           <thead><tr>
-            <th>Course</th><th>Title / Instructor <span class="small muted">(click row for requirements)</span></th><th>Slots</th><th>Rank</th>
+            <th>Course</th><th>Title / Instructor <span class="small muted">(click row for requirements)</span></th><th>Area</th><th>Slots</th><th>Rank</th>
             <th>Taken? <span class="small muted">(A/B only)</span></th>
-            <th>Prior TA?</th>
+            <th>Prior TA/CA?</th>
           </tr></thead>
           <tbody></tbody>
         </table>
@@ -303,7 +334,7 @@ table.prior-ta button.row-del:hover {
 
     <div class="banner small">
       <b>Note:</b> Your responses generate an ordered list of classes that can be fed into the
-      Stable Marriage matching algorithm. Saved data lives in your browser only (LocalStorage).
+      Stable Marriage matching algorithm.
     </div>
 
     <div class="toolbar">
@@ -337,8 +368,89 @@ let DATA = null;
   initStudentForm(user);
 })();
 
+function abbrevName(fullName) {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length < 2) return fullName;
+  return parts[0][0] + '.' + parts[parts.length - 1];
+}
+
+function setupProfAutocomplete(input) {
+  let dropdown = null;
+  let activeIdx = -1;
+
+  function hideDropdown() {
+    if (dropdown) { dropdown.remove(); dropdown = null; }
+    activeIdx = -1;
+  }
+
+  function showDropdown(matches) {
+    hideDropdown();
+    if (!matches.length) return;
+    const rect = input.getBoundingClientRect();
+    dropdown = document.createElement('div');
+    dropdown.className = 'prof-ac-dropdown';
+    dropdown.style.top  = (rect.bottom + 2) + 'px';
+    dropdown.style.left = rect.left + 'px';
+    dropdown.style.minWidth = Math.max(rect.width, 240) + 'px';
+    matches.forEach((f, i) => {
+      const item = document.createElement('div');
+      item.className = 'prof-ac-item';
+      item.textContent = `${abbrevName(f.name)} — ${f.name} (${f.netid})`;
+      item.addEventListener('mousedown', e => {
+        e.preventDefault();
+        input.value = abbrevName(f.name);
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        hideDropdown();
+      });
+      dropdown.appendChild(item);
+    });
+    document.body.appendChild(dropdown);
+  }
+
+  function setActive(idx) {
+    if (!dropdown) return;
+    const items = dropdown.querySelectorAll('.prof-ac-item');
+    items.forEach((it, i) => it.classList.toggle('ac-active', i === idx));
+    activeIdx = idx;
+  }
+
+  input.addEventListener('input', () => {
+    const q = input.value.toLowerCase().trim();
+    if (!q) { hideDropdown(); return; }
+    const matches = DATA.faculty.filter(f => {
+      const parts = f.name.trim().split(/\s+/);
+      const first = parts[0].toLowerCase();
+      return abbrevName(f.name).toLowerCase().includes(q)
+          || f.name.toLowerCase().includes(q)
+          || first.includes(q)
+          || f.netid.toLowerCase().includes(q);
+    });
+    showDropdown(matches.slice(0, 10));
+  });
+
+  input.addEventListener('keydown', e => {
+    if (!dropdown) return;
+    const items = dropdown.querySelectorAll('.prof-ac-item');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive(Math.min(activeIdx + 1, items.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive(Math.max(activeIdx - 1, 0));
+    } else if (e.key === 'Enter' && activeIdx >= 0) {
+      e.preventDefault();
+      items[activeIdx].dispatchEvent(new MouseEvent('mousedown'));
+    } else if (e.key === 'Escape') {
+      hideDropdown();
+    }
+  });
+
+  input.addEventListener('blur', () => setTimeout(hideDropdown, 150));
+}
+
 function initStudentForm(user) {
   const me = DATA.students.find(s => s.netid === user.netid);
+
   document.getElementById('f_netid').value = me.netid;
   document.getElementById('f_name').value = me.name;
   document.getElementById('f_program').value = `${me.program} (Year ${me.year})`;
@@ -362,6 +474,8 @@ function initStudentForm(user) {
     ranks: {}, // course_id -> A|B|C|F
     taken: {}, // course_id -> {sem, prof, grade}
     topFive: [],
+    reqAck: {},   // course_id -> bool
+    comments: {}, // course_id -> string (max 45 chars)
   };
 
   // Load existing
@@ -442,15 +556,18 @@ function initStudentForm(user) {
       200: document.getElementById('filter200').checked,
       300: document.getElementById('filter300').checked,
       400: document.getElementById('filter400').checked,
+      500: document.getElementById('filter500').checked,
     };
     const onlyAB = document.getElementById('filterAB').checked;
     const onlyPriorTA = document.getElementById('filterPriorTA').checked;
+    const areaFilter = document.getElementById('filterArea').value;
     const filtered = DATA.courses.filter(c => {
       if (c.allocTA !== 'yes') return false;
       if (!showLvl[c.level]) return false;
+      if (areaFilter && c.area !== areaFilter) return false;
       if (filter) {
         const instr = instrLookup[c.course_id] || {};
-        const haystack = `${c.course_id} ${c.title} ${instr.name || ''} ${instr.email || ''}`.toLowerCase();
+        const haystack = `${c.course_id} ${c.title} ${instr.name || ''} ${instr.email || ''} ${c.area}`.toLowerCase();
         if (!haystack.includes(filter)) return false;
       }
       if (onlyAB) {
@@ -470,14 +587,20 @@ function initStudentForm(user) {
         ? `<div class="course-instr">${instr.name} &middot; <a href="mailto:${instr.email}" onclick="event.stopPropagation()">${instr.email}</a></div>`
         : '';
       const showArea = instr && instr.area && instr.area !== 'N/A';
-      const hasReqsInfo = instr && (instr.reqs || instr.prefs || showArea);
+      const hasInstrInfo = instr && (instr.reqs || instr.prefs || showArea);
+      const hasReqsInfo = hasInstrInfo || needsDetails;
+      const reqAck = state.reqAck[c.course_id] || false;
+      const comment = (state.comments[c.course_id] || '').replace(/"/g, '&quot;');
+      const commentsInpHTML = `<b>Comments to instructor:</b> <input type="text" class="comments-inp" maxlength="60" placeholder="Optional notes (max 60 chars)" value="${comment}" style="width:320px;font-size:inherit;padding:2px 5px;border:1px solid var(--border);border-radius:3px"/>`;
       const detailHTML = hasReqsInfo ? `
         <tr class="course-detail-row" data-cid="${c.course_id}" >
-          <td colspan="6">
+          <td colspan="7">
             <div class="course-detail-content">
               ${showArea ? `<div><b>Research area:</b> ${instr.area}</div>` : ''}
-              ${instr.reqs ? `<div><b>Requirements:</b> ${instr.reqs}</div>` : ''}
-              ${instr.prefs ? `<div><b>Preferred:</b> ${instr.prefs}</div>` : ''}
+              ${instr && instr.reqs ? `<div><b>Requirements:</b> ${instr.reqs}&ensp;<label class="checkline" style="display:inline-flex;margin-left:0.25em"><input type="checkbox" class="req-ack-cb" ${reqAck ? 'checked' : ''}/>&nbsp;I've read and satisfy these requirements</label></div>` : ''}
+              ${instr && instr.prefs
+                ? `<div><b>Preferred:</b> ${instr.prefs}&ensp;${commentsInpHTML}</div>`
+                : `<div>${commentsInpHTML}</div>`}
             </div>
           </td>
         </tr>` : '';
@@ -487,6 +610,7 @@ function initStudentForm(user) {
           <div>${c.title}</div>
           ${instrHTML}
         </td>
+        <td><span class="muted small">${c.area !== 'N/A' ? c.area : '—'}</span></td>
         <td>${c.slots}</td>
         <td>
           <div class="grade-cell">
@@ -500,7 +624,7 @@ function initStudentForm(user) {
             <label class="checkline"><input type="checkbox" class="took-cb" ${taken.took?'checked':''}/> Taken</label>
             <div class="took-detail" style="display:${taken.took?'block':'none'}">
               <input type="text" class="took-sem" placeholder="Sem" value="${taken.sem||''}" style="width:70px"/>
-              <input type="text" class="took-prof" placeholder="Prof" value="${taken.prof||''}" style="width:90px"/>
+              <input type="text" class="took-prof" placeholder="Prof" value="${taken.prof||''}" style="width:110px"/>
               <input type="text" class="took-grade" placeholder="Grade" value="${taken.grade||''}" style="width:60px"/>
             </div>` : '<span class="muted small">—</span>'}
         </td>
@@ -513,12 +637,27 @@ function initStudentForm(user) {
             : '<span class="muted small">—</span>'}
         </td>
       </tr>${detailHTML}`;
-    }).join('');   
+    }).join('');
+    // Update rank summary
+    const _aCount = Object.values(state.ranks).filter(v => v === 'A').length;
+    const _bCount = Object.values(state.ranks).filter(v => v === 'B').length;
+    const _sumParts = [];
+    if (_aCount) _sumParts.push(`${_aCount} of 5 "A"${_aCount === 1 ? '' : 's'} used`);
+    if (_bCount) _sumParts.push(`${_bCount} "B"${_bCount === 1 ? '' : 's'}`);
+    document.getElementById('rankSummary').textContent = _sumParts.join(', ');
     // Wire change events
     tbody.querySelectorAll('tr.course-main-row').forEach(tr => {
       const cid = tr.dataset.cid;
       tr.querySelectorAll(`input[name="rank-${cid}"]`).forEach(r => {
         r.addEventListener('change', () => {
+          if (r.value === 'A') {
+            const aCount = Object.entries(state.ranks).filter(([k, v]) => k !== cid && v === 'A').length;
+            if (aCount >= 5) {
+              alert('You already have 5 courses ranked A. Please change one of your existing A-ranked courses to a different rank before ranking another as A.');
+              renderRows();
+              return;
+            }
+          }
           state.ranks[cid] = r.value;
           if (r.value === 'A' && state.topFive.length < 5 && !state.topFive.includes(cid)) {
             state.topFive.push(cid);
@@ -527,6 +666,17 @@ function initStudentForm(user) {
           renderTopFive();
           scheduleSave();
         });
+      });
+      const detailRow = tr.nextElementSibling && tr.nextElementSibling.classList.contains('course-detail-row') ? tr.nextElementSibling : null;
+      const reqAckCb = detailRow && detailRow.querySelector('.req-ack-cb');
+      if (reqAckCb) reqAckCb.addEventListener('change', () => {
+        state.reqAck[cid] = reqAckCb.checked;
+        scheduleSave();
+      });
+      const commentsInp = detailRow && detailRow.querySelector('.comments-inp');
+      if (commentsInp) commentsInp.addEventListener('input', () => {
+        state.comments[cid] = commentsInp.value;
+        scheduleSave();
       });
       const tookCb = tr.querySelector('.took-cb');
       if (tookCb) tookCb.addEventListener('change', () => {
@@ -543,9 +693,11 @@ function initStudentForm(user) {
           scheduleSave();
         });
       });
+      const tookProf = tr.querySelector('.took-prof');
+      if (tookProf) setupProfAutocomplete(tookProf);
     });
   }
-  ['courseFilter','filter100','filter200','filter300','filter400','filterAB','filterPriorTA'].forEach(id => {
+  ['courseFilter','filter100','filter200','filter300','filter400','filter500','filterAB','filterPriorTA','filterArea'].forEach(id => {
     document.getElementById(id).addEventListener('input', renderRows);
     document.getElementById(id).addEventListener('change', renderRows);
   });
@@ -654,7 +806,7 @@ function initStudentForm(user) {
       <tr>
         <td><input type="text" data-idx="${i}" data-k="course" value="${(row.course||'').replace(/"/g,'&quot;')}" placeholder="e.g. CS 225" /></td>
         <td><input type="text" data-idx="${i}" data-k="sem" value="${(row.sem||'').replace(/"/g,'&quot;')}" placeholder="e.g. Fa23" /></td>
-        <td><input type="text" data-idx="${i}" data-k="prof" value="${(row.prof||'').replace(/"/g,'&quot;')}" placeholder="e.g. Mattox" /></td>
+        <td><input type="text" data-idx="${i}" data-k="prof" value="${(row.prof||'').replace(/"/g,'&quot;')}" placeholder="e.g. L.Angrave" /></td>
         <td class="actions"><button type="button" class="row-del" data-idx="${i}" title="Delete row">×</button></td>
       </tr>
     `).join('');
@@ -666,6 +818,7 @@ function initStudentForm(user) {
         scheduleSave();
       });
     });
+    priorTbody.querySelectorAll('input[data-k="prof"]').forEach(inp => setupProfAutocomplete(inp));
     priorTbody.querySelectorAll('button.row-del').forEach(btn => {
       btn.addEventListener('click', () => {
         priorTARows.splice(parseInt(btn.dataset.idx, 10), 1);

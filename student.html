@@ -151,6 +151,13 @@ table.prior-ta button.row-del:hover {
   background: var(--illinois-blue, #13294b);
   color: #fff;
 }
+.took-detail { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
+.took-field { display: inline-flex; align-items: center; gap: 2px; }
+.took-val { font-size: 0.85em; cursor: pointer; }
+.took-val:hover { text-decoration: underline dotted; }
+.took-pen { background: none; border: none; cursor: pointer; padding: 0 2px; font-size: 0.8em; color: var(--muted); line-height: 1; }
+.took-pen:hover { color: var(--illinois-blue); }
+.took-inp { padding: 1px 3px; font-size: 0.85em; }
 </style>
 </head>
 <body>
@@ -290,14 +297,13 @@ table.prior-ta button.row-del:hover {
           <option>SciComp</option><option>SE</option><option>Security</option>
           <option>Systems</option><option>Theory</option>
         </select>
-        <span id="rankSummary" class="muted small" style="margin-left:auto;white-space:nowrap"></span>
       </div>
 
       <div style="overflow:auto; max-height:520px; border:1px solid var(--border);">
         <table class="courses" id="coursesTable">
           <thead><tr>
-            <th>Course</th><th>Title / Instructor <span class="small muted">(click row for requirements)</span></th><th>Area</th><th>Slots</th><th>Rank</th>
-            <th>Taken? <span class="small muted">(A/B only)</span></th>
+            <th>Course</th><th>Title / Instructor</th><th>Area</th><th>Slots</th><th>Rank<br><span id="rankSummary" class="small" style="font-weight:normal;white-space:nowrap;color:rgba(255,255,255,0.75)"></span></th>
+            <th>Taken as student? <span class="small muted">(A/B only)</span></th>
             <th>Prior TA/CA?</th>
           </tr></thead>
           <tbody></tbody>
@@ -622,10 +628,10 @@ function initStudentForm(user) {
         <td>
           ${needsDetails ? `
             <label class="checkline"><input type="checkbox" class="took-cb" ${taken.took?'checked':''}/> Taken</label>
-            <div class="took-detail" style="display:${taken.took?'block':'none'}">
-              <input type="text" class="took-sem" placeholder="Sem" value="${taken.sem||''}" style="width:70px"/>
-              <input type="text" class="took-prof" placeholder="Prof" value="${taken.prof||''}" style="width:110px"/>
-              <input type="text" class="took-grade" placeholder="Grade" value="${taken.grade||''}" style="width:60px"/>
+            <div class="took-detail" style="display:${taken.took?'flex':'none'}">
+              <span class="took-field" data-k="sem"><span class="took-val">${taken.sem||'<em class="muted small">Sem</em>'}</span><button type="button" class="took-pen" title="Edit">✏</button><input type="text" class="took-inp took-sem" style="display:none;width:70px" placeholder="e.g. Fa23" value="${taken.sem||''}"/></span>
+              <span class="took-field" data-k="prof"><span class="took-val">${taken.prof||'<em class="muted small">Prof</em>'}</span><button type="button" class="took-pen" title="Edit">✏</button><input type="text" class="took-inp took-prof" style="display:none;width:120px" placeholder="Prof" value="${taken.prof||''}"/></span>
+              <span class="took-field" data-k="grade"><span class="took-val">${taken.grade||'<em class="muted small">Grade</em>'}</span><button type="button" class="took-pen" title="Edit">✏</button><input type="text" class="took-inp took-grade" style="display:none;width:50px" placeholder="Grade" value="${taken.grade||''}"/></span>
             </div>` : '<span class="muted small">—</span>'}
         </td>
         <td>
@@ -682,16 +688,34 @@ function initStudentForm(user) {
       if (tookCb) tookCb.addEventListener('change', () => {
         state.taken[cid] = state.taken[cid] || {};
         state.taken[cid].took = tookCb.checked;
-        tr.querySelector('.took-detail').style.display = tookCb.checked ? 'block' : 'none';
+        tr.querySelector('.took-detail').style.display = tookCb.checked ? 'flex' : 'none';
         scheduleSave();
       });
-      ['sem','prof','grade'].forEach(k => {
-        const el = tr.querySelector('.took-'+k);
-        if (el) el.addEventListener('input', () => {
+      const phLabels = { sem: 'Sem', prof: 'Prof', grade: 'Grade' };
+      tr.querySelectorAll('.took-field').forEach(field => {
+        const k = field.dataset.k;
+        const valEl = field.querySelector('.took-val');
+        const pen   = field.querySelector('.took-pen');
+        const inp   = field.querySelector('.took-inp');
+        function startEdit() {
+          valEl.style.display = 'none';
+          pen.style.display = 'none';
+          inp.style.display = '';
+          inp.focus(); inp.select();
+        }
+        function endEdit() {
           state.taken[cid] = state.taken[cid] || {};
-          state.taken[cid][k] = el.value;
+          state.taken[cid][k] = inp.value;
+          valEl.innerHTML = inp.value || `<em class="muted small">${phLabels[k]}</em>`;
+          inp.style.display = 'none';
+          valEl.style.display = '';
+          pen.style.display = '';
           scheduleSave();
-        });
+        }
+        pen.addEventListener('click', startEdit);
+        valEl.addEventListener('click', startEdit);
+        inp.addEventListener('blur', endEdit);
+        inp.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === 'Escape') inp.blur(); });
       });
       const tookProf = tr.querySelector('.took-prof');
       if (tookProf) setupProfAutocomplete(tookProf);

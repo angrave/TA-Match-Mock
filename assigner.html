@@ -28,6 +28,32 @@
     <div class="stat"><div class="num" id="stSetB">–</div><div class="lbl">Set B (no strong reqs)</div></div>
   </div>
 
+  <h2>Responses</h2>
+  <details class="resp-details" id="studentResponsesDetails">
+    <summary>Student form responses <span id="stuRespBadge" class="resp-badge"></span></summary>
+    <div class="resp-body">
+      <div id="studentSummary"><span class="muted">None yet.</span></div>
+      <div class="resp-footer">
+        <span id="stuNonRespNote" class="muted small"></span>
+        <button class="btn ghost" id="copyStuEmailsBtn">Copy non-responder emails</button>
+      </div>
+    </div>
+  </details>
+  <details class="resp-details" id="instrResponsesDetails">
+    <summary>Instructor form responses <span id="instrRespBadge" class="resp-badge"></span></summary>
+    <div class="resp-body">
+      <div id="instructorSummary"><span class="muted">None yet.</span></div>
+      <div class="resp-footer">
+        <span id="instrNonRespNote" class="muted small"></span>
+        <button class="btn ghost" id="copyInstrEmailsBtn">Copy non-responder emails</button>
+      </div>
+    </div>
+  </details>
+  <div class="toolbar" style="margin-bottom:1rem">
+    <button class="btn ghost" id="clearBtn">Clear all local data</button>
+    <button class="btn ghost" id="exportBtn">Export JSON</button>
+  </div>
+
   <h2>Phases</h2>
   <div class="phase-strip">
     <div class="phase-card" id="card-2">
@@ -304,6 +330,42 @@ function runHR(phase) {
   return { proposals, acceptances, rejections, newMatches, eligibleCount: eligible.length };
 }
 
+function renderResponses() {
+  const sResp = getStudentResponses();
+  const iResp = getInstructorResponses();
+  const sKeys = Object.keys(sResp);
+  const iKeys = Object.keys(iResp).filter(k => iResp[k].course_id);
+
+  document.getElementById('stuRespBadge').textContent = `${sKeys.length} / ${DATA.students.length}`;
+  document.getElementById('studentSummary').innerHTML = sKeys.length
+    ? sKeys.map(k => {
+        const s = DATA.students.find(x => x.netid === k);
+        return `<div>• <b>${s ? s.name : k}</b> (${k}) — updated ${new Date(sResp[k].updatedAt).toLocaleString()}</div>`;
+      }).join('')
+    : '<span class="muted">None yet.</span>';
+
+  const stuNonResp = DATA.students.filter(s => !sResp[s.netid]);
+  document.getElementById('stuNonRespNote').textContent = stuNonResp.length
+    ? `${stuNonResp.length} student${stuNonResp.length !== 1 ? 's' : ''} have not responded`
+    : 'All students have responded.';
+
+  document.getElementById('instrRespBadge').textContent = `${iKeys.length} form${iKeys.length !== 1 ? 's' : ''}`;
+  document.getElementById('instructorSummary').innerHTML = iKeys.length
+    ? iKeys.map(k => {
+        const r = iResp[k];
+        const c = DATA.courses.find(x => x.course_id === r.course_id);
+        const inst = DATA.faculty.find(x => x.netid === r.instructor);
+        return `<div>• <b>${c ? c.course_id + ' — ' + c.title : r.course_id}</b> by ${inst ? inst.name : r.instructor} — updated ${new Date(r.updatedAt).toLocaleString()}</div>`;
+      }).join('')
+    : '<span class="muted">None yet.</span>';
+
+  const respondedFaculty = new Set(Object.values(iResp).map(r => r.instructor));
+  const instrNonResp = DATA.faculty.filter(f => !respondedFaculty.has(f.netid));
+  document.getElementById('instrNonRespNote').textContent = instrNonResp.length
+    ? `${instrNonResp.length} instructor${instrNonResp.length !== 1 ? 's' : ''} have not responded`
+    : 'All instructors have responded.';
+}
+
 function renderAll() {
   // Header stats
   const sResp = getStudentResponses();
@@ -325,6 +387,7 @@ function renderAll() {
   document.getElementById('runPhaseBtn').textContent =
     nextP > 4 ? 'All phases complete' : `Run Phase ${nextP} ▶`;
 
+  renderResponses();
   renderAssignments();
 }
 
@@ -568,6 +631,42 @@ function downloadXlsx() {
   buildFooter();
   resetState();
   renderAll();
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    if (confirm('Clear all locally-stored TA matching data? This cannot be undone.')) {
+      resetAllDemoData();
+      location.reload();
+    }
+  });
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const dump = { students: getStudentResponses(), instructors: getInstructorResponses(), exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ta-matching-export.json';
+    a.click();
+  });
+  function makeCopyBtn(btnId, getEmails) {
+    document.getElementById(btnId).addEventListener('click', () => {
+      const emails = getEmails();
+      if (!emails.length) { alert('No non-responders to copy.'); return; }
+      navigator.clipboard.writeText(emails.join(', ')).then(() => {
+        const btn = document.getElementById(btnId);
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = orig; }, 2000);
+      });
+    });
+  }
+  makeCopyBtn('copyStuEmailsBtn', () => {
+    const sResp = getStudentResponses();
+    return DATA.students.filter(s => !sResp[s.netid]).map(s => `${s.netid}@illinois.edu`);
+  });
+  makeCopyBtn('copyInstrEmailsBtn', () => {
+    const iResp = getInstructorResponses();
+    const responded = new Set(Object.values(iResp).map(r => r.instructor));
+    return DATA.faculty.filter(f => !responded.has(f.netid)).map(f => `${f.netid}@illinois.edu`);
+  });
 
   document.getElementById('runPhaseBtn').addEventListener('click', runNextPhase);
   document.getElementById('resetBtn').addEventListener('click', () => {

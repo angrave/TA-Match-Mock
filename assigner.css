@@ -51,3 +51,28 @@
   .log .warn { color: #FFC773; }
   .log .err { color: #FF8B7A; }
   .log .dim { color: #7F8FA8; }
+
+  details.resp-details {
+    background: #fff; border: 1px solid var(--border); border-radius: 4px; margin: 6px 0;
+  }
+  details.resp-details > summary {
+    padding: 10px 14px; cursor: pointer; font-weight: 600;
+    display: flex; align-items: center; gap: 8px; list-style: none; user-select: none;
+  }
+  details.resp-details > summary::-webkit-details-marker { display: none; }
+  details.resp-details > summary::before {
+    content: '▶'; font-size: 11px; color: var(--muted); transition: transform 0.15s; flex-shrink: 0;
+  }
+  details.resp-details[open] > summary::before { transform: rotate(90deg); }
+  .resp-badge {
+    font-size: 12px; font-weight: 400; color: var(--muted);
+    background: #f0f0f0; border-radius: 10px; padding: 1px 8px;
+  }
+  .resp-body {
+    padding: 4px 14px 12px; border-top: 1px solid var(--border); font-size: 13px;
+    max-height: 260px; overflow-y: auto;
+  }
+  .resp-footer {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border);
+  }

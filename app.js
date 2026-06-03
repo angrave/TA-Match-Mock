@@ -11,7 +11,7 @@ const LS_KEYS = {
 
 // Bump when the shape of seeded/stored data changes in a way that
 // requires wiping LocalStorage and re-seeding from scratch.
-const DATA_VERSION = 3;
+const DATA_VERSION = 4;
 
 // Wipe all app-owned LocalStorage so the next page load re-seeds demo data.
 function resetAllDemoData() {
@@ -240,7 +240,9 @@ function ensureSeededStudentResponses(data) {
   const existing = getStudentResponses();
   if (Object.keys(existing).length > 0) return false;
   const all = {};
-  data.students.forEach(s => {
+  // Leave the last 5 students unseeded so there are a few visible non-responders
+  const toSeed = data.students.slice(0, -5);
+  toSeed.forEach(s => {
     const r = buildSeededStudentResponse(s, data.courses, data.faculty);
     all[s.netid] = { ...r, updatedAt: new Date().toISOString(), seeded: true };
   });
@@ -450,6 +452,18 @@ function ensureSeededInstructorResponses(data) {
     const key = `${instructor.netid}::${c.course_id}`;
     all[key] = { ...resp, updatedAt: new Date().toISOString(), seeded: true };
   });
+
+  // Drop one entry for each of 3 faculty who only appear once, so they become visible non-responders
+  const countByInstructor = {};
+  Object.values(all).forEach(r => {
+    countByInstructor[r.instructor] = (countByInstructor[r.instructor] || 0) + 1;
+  });
+  const singletons = Object.keys(countByInstructor).filter(nid => countByInstructor[nid] === 1);
+  singletons.slice(-3).forEach(nid => {
+    const keyToDrop = Object.keys(all).find(k => all[k].instructor === nid);
+    if (keyToDrop) delete all[keyToDrop];
+  });
+
   localStorage.setItem(LS_KEYS.INSTRUCTOR_RESPONSES, JSON.stringify(all));
   return true;
 }

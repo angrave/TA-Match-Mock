@@ -10,22 +10,34 @@
 .course-instr a:hover {
   text-decoration: underline;
 }
-tr.course-main-row:hover td {
-  background: #f3f3f3;
-}
-tr.course-detail-row td {
-  background: #fafafa;
-  padding: 8px 12px 10px 32px;
-}
+tr.course-main-row.row-even td { background: #fff; }
+tr.course-main-row.row-odd td  { background: #f7f7f7; }
+tr.course-main-row:hover td    { background: #eaf0f8; }
+tr.course-detail-row.row-even td { background: #efefef; padding: 8px 12px 10px 32px; }
+tr.course-detail-row.row-odd td  { background: #e8e8e8; padding: 8px 12px 10px 32px; }
 .course-detail-content {
   font-size: 0.88em;
   color: var(--text);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 .course-detail-content b {
   color: var(--illinois-blue);
+}
+.req-pref-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.req-col {
+  flex: 0 1 65%;
+  max-width: 65%;
+}
+.pref-col {
+  flex: 1;
+  min-width: 180px;
 }
 table.prior-ta {
   width: 100%;

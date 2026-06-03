@@ -84,10 +84,9 @@
           </select>
         </div>
       </div>
-      <p class="muted small">Set your <b>25% / 50% appointment preference</b> in the appointment-percentage section below — it captures all four options described in the requirements.</p>
       <label class="checkline">
         <input type="checkbox" id="f_prevTA" />
-        I have <b>previously held a TA appointment</b> at UIUC (used as a tiebreaker in later phases)
+        I have <b>previously held a TA appointment at University of Illinois</b>
       </label>
 
       <label>Times you are <b>absolutely not available</b> (due to required courses):</label>
@@ -119,6 +118,26 @@
     </div>
 
     <div class="panel">
+      <h2>Appointment percentage preference</h2>
+      <div class="radio-group">
+        <label><input type="radio" name="appt" value="50only" /> I would only accept a 50% appointment and not a 25%</label>
+        <label><input type="radio" name="appt" value="50pref" checked /> I prefer a 50% appointment but would accept a 25%</label>
+        <label><input type="radio" name="appt" value="25pref" /> I prefer a 25% appointment but would accept a 50%</label>
+        <label><input type="radio" name="appt" value="25only" /> I would only accept a 25% appointment, and not a 50%</label>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Faculty to avoid</h2>
+      <label>Faculty you do <b>not</b> want to work with</label>
+      <div class="row" style="align-items:flex-end">
+        <select id="avoidFacSel" data-combobox></select>
+        <button class="btn secondary" id="addAvoidFac" type="button" style="flex:0 0 auto">Add</button>
+      </div>
+      <div class="ordered-list" id="avoidFacList"></div>
+    </div>
+
+    <div class="panel">
       <h2>Course preferences</h2>
       <p class="muted">
         Courses at the 400-level or higher (marked <span class="req-tag">REQ</span>) have explicit requirements;
@@ -127,6 +146,11 @@
         You may rank at most <b>5</b> courses as <b>A</b>.
       </p>
 
+      <h3>Top 5 (from your A-ranked courses)</h3>
+      <p class="muted small">List your top 5 courses, in order. Selections must be courses you ranked as <b>A</b>.</p>
+      <div id="topFiveContainer"></div>
+
+      <h3>Course Ranking</h3>
       <div class="filters">
         <input type="text" id="courseFilter" class="search-input" placeholder="Filter by course id, title, or professor..." />
         <label><input type="checkbox" id="filter100" checked /> 100</label>
@@ -156,33 +180,6 @@
           <tbody></tbody>
         </table>
       </div>
-    </div>
-
-    <div class="panel">
-      <h2>Top 5 (from your A-ranked courses)</h2>
-      <p class="muted">List your top 5 courses, in order. Selections must be courses you ranked as <b>A</b>.</p>
-      <div id="topFiveContainer"></div>
-    </div>
-
-    <div class="panel">
-      <h2>Appointment percentage preference</h2>
-      <p class="muted">Default if not picked is option 1.</p>
-      <div class="radio-group">
-        <label><input type="radio" name="appt" value="50only" /> I would only accept a 50% appointment and not a 25%</label>
-        <label><input type="radio" name="appt" value="50pref" checked /> I prefer a 50% appointment but would accept a 25%</label>
-        <label><input type="radio" name="appt" value="25pref" /> I prefer a 25% appointment but would accept a 50%</label>
-        <label><input type="radio" name="appt" value="25only" /> I would only accept a 25% appointment, and not a 50%</label>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Faculty to avoid</h2>
-      <label>Faculty you do <b>not</b> want to work with (ordered)</label>
-      <div class="row" style="align-items:flex-end">
-        <select id="avoidFacSel" data-combobox></select>
-        <button class="btn secondary" id="addAvoidFac" type="button" style="flex:0 0 auto">Add</button>
-      </div>
-      <div class="ordered-list" id="avoidFacList"></div>
     </div>
 
     <div class="banner small">
@@ -320,6 +317,24 @@ function initStudentForm(user) {
   document.getElementById('avoidFacSel').innerHTML = facSelHTML;
   enhanceAllSelects();
 
+  // Reset avoidFacSel combobox to blank
+  const avoidFacSel = document.getElementById('avoidFacSel');
+  const avoidFacInput = avoidFacSel.parentNode.querySelector('.combobox-input');
+  function clearAvoidFac() {
+    avoidFacSel.value = '';
+    if (avoidFacInput) avoidFacInput.value = '';
+  }
+  // Track whether the user picked an item from the dropdown during the current focus session
+  let avoidFacPicked = false;
+  avoidFacSel.addEventListener('change', () => { avoidFacPicked = true; });
+  if (avoidFacInput) {
+    avoidFacInput.addEventListener('focus', () => { avoidFacPicked = false; });
+    avoidFacInput.addEventListener('blur', () => {
+      if (!avoidFacPicked) setTimeout(clearAvoidFac, 160); // after combobox's own 150ms blur handler
+      avoidFacPicked = false;
+    });
+  }
+
   // State
   const state = {
     prefFaculty: [],
@@ -355,12 +370,13 @@ function initStudentForm(user) {
   renderFacChips('avoidFacList', state.avoidFaculty, true);
 
   document.getElementById('addAvoidFac').onclick = () => {
-    const v = document.getElementById('avoidFacSel').value;
+    const v = avoidFacSel.value;
     if (v && !state.avoidFaculty.includes(v)) {
       state.avoidFaculty.push(v);
       renderFacChips('avoidFacList', state.avoidFaculty, true);
       scheduleSave();
     }
+    clearAvoidFac();
   };
 
   // Prior TA rows (declared here so renderRows can read it)
@@ -430,7 +446,8 @@ function initStudentForm(user) {
       if (onlyPriorTA && priorTAFor(c.course_id).length === 0) return false;
       return true;
     });
-    tbody.innerHTML = filtered.map(c => {
+    tbody.innerHTML = filtered.map((c, rowIdx) => {
+      const rowClass = rowIdx % 2 === 0 ? 'row-even' : 'row-odd';
       const r = rankFor(c);
       const taken = state.taken[c.course_id] || {};
       const priorMatches = priorTAFor(c.course_id);
@@ -444,20 +461,29 @@ function initStudentForm(user) {
       const hasReqsInfo = hasInstrInfo || needsDetails;
       const reqAck = state.reqAck[c.course_id] || false;
       const comment = (state.comments[c.course_id] || '').replace(/"/g, '&quot;');
-      const commentsInpHTML = `<b>Comments to instructor:</b> <input type="text" class="comments-inp" maxlength="60" placeholder="Optional notes (max 60 chars)" value="${comment}" style="width:320px;font-size:inherit;padding:2px 5px;border:1px solid var(--border);border-radius:3px"/>`;
+      const commentsInpHTML = `<b>Comments to instructor:</b> <input type="text" class="comments-inp" maxlength="60" placeholder="Optional notes (max 60 chars)" value="${comment}" style="width:280px;font-size:inherit;padding:2px 5px;border:1px solid var(--border);border-radius:3px"/>`;
+      const reqPrefHTML = hasReqsInfo ? `
+        <div class="req-pref-row">
+          ${instr && instr.reqs ? `
+            <div class="req-col">
+              <div><b>Requirements:</b> ${instr.reqs}</div>
+              <label class="checkline" style="display:inline-flex;margin-top:0.3em"><input type="checkbox" class="req-ack-cb" ${reqAck ? 'checked' : ''}/>&nbsp;I've read and satisfy these requirements</label>
+            </div>` : ''}
+          <div class="pref-col">
+            ${instr && instr.prefs ? `<div><b>Preferred:</b> ${instr.prefs}</div>` : ''}
+            <div style="margin-top:${instr && instr.prefs ? '4px' : '0'}">${commentsInpHTML}</div>
+          </div>
+        </div>` : '';
       const detailHTML = hasReqsInfo ? `
-        <tr class="course-detail-row" data-cid="${c.course_id}" >
+        <tr class="course-detail-row ${rowClass}" data-cid="${c.course_id}">
           <td colspan="7">
             <div class="course-detail-content">
               ${showArea ? `<div><b>Research area:</b> ${instr.area}</div>` : ''}
-              ${instr && instr.reqs ? `<div><b>Requirements:</b> ${instr.reqs}&ensp;<label class="checkline" style="display:inline-flex;margin-left:0.25em"><input type="checkbox" class="req-ack-cb" ${reqAck ? 'checked' : ''}/>&nbsp;I've read and satisfy these requirements</label></div>` : ''}
-              ${instr && instr.prefs
-                ? `<div><b>Preferred:</b> ${instr.prefs}&ensp;${commentsInpHTML}</div>`
-                : `<div>${commentsInpHTML}</div>`}
+              ${reqPrefHTML}
             </div>
           </td>
         </tr>` : '';
-      return `<tr class="course-main-row" data-cid="${c.course_id}"${hasReqsInfo ? ' style="cursor:pointer"' : ''}>
+      return `<tr class="course-main-row ${rowClass}" data-cid="${c.course_id}"${hasReqsInfo ? ' style="cursor:pointer"' : ''}>
         <td><span class="${c.level>=400?'lvl-400':''}">${c.course_id}</span>${c.hasReqs?'<span class="req-tag">REQ</span>':''}</td>
         <td>
           <div>${c.title}</div>
@@ -582,7 +608,7 @@ function initStudentForm(user) {
     state.topFive = state.topFive.filter(cid => aCourses.some(c => c.course_id === cid));
 
     if (!aCourses.length) {
-      container.innerHTML = '<div class="muted small">Rank some courses as <b>A</b> to populate this list.</div>';
+      container.innerHTML = '<div class="muted small">No courses selected — use the table below to search for preferred courses, check the requirements and rank them.</div>';
       return;
     }
 

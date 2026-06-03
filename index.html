@@ -39,17 +39,6 @@
     </div>
   </div>
 
-  <h2>Submitted responses (this browser)</h2>
-  <div class="panel">
-    <h3>Students who completed the form</h3>
-    <div id="studentSummary" class="muted">None yet.</div>
-    <h3>Course forms submitted</h3>
-    <div id="instructorSummary" class="muted">None yet.</div>
-    <div class="toolbar">
-      <button class="btn ghost" id="clearBtn">Clear all local data</button>
-      <button class="btn ghost" id="exportBtn">Export JSON</button>
-    </div>
-  </div>
 </main>
 <div id="app-footer"></div>
 
@@ -77,45 +66,6 @@
       `Acting as <b>${row ? row.name : user.netid}</b> (${user.role}, netid <code>${user.netid}</code>).`;
   }
 
-  const sResp = getStudentResponses();
-  const iResp = getInstructorResponses();
-  const ss = document.getElementById('studentSummary');
-  const is = document.getElementById('instructorSummary');
-  const sKeys = Object.keys(sResp);
-  const iKeys = Object.keys(iResp);
-  if (sKeys.length) {
-    ss.innerHTML = sKeys.map(k => {
-      const s = data.students.find(x => x.netid === k);
-      return `<div>• <b>${s?s.name:k}</b> (${k}) — updated ${new Date(sResp[k].updatedAt).toLocaleString()}</div>`;
-    }).join('');
-  }
-  if (iKeys.length) {
-    is.innerHTML = iKeys.map(k => {
-      const r = iResp[k];
-      const c = data.courses.find(x => x.course_id === r.course_id);
-      const inst = data.faculty.find(x => x.netid === r.instructor);
-      return `<div>• <b>${c?c.course_id+' — '+c.title:r.course_id}</b> by ${inst?inst.name:r.instructor} — updated ${new Date(r.updatedAt).toLocaleString()}</div>`;
-    }).join('');
-  }
-
-  document.getElementById('clearBtn').addEventListener('click', () => {
-    if (confirm('Clear all locally-stored TA matching data? This cannot be undone.')) {
-      resetAllDemoData();
-      location.reload();
-    }
-  });
-  document.getElementById('exportBtn').addEventListener('click', () => {
-    const dump = {
-      students: getStudentResponses(),
-      instructors: getInstructorResponses(),
-      exportedAt: new Date().toISOString()
-    };
-    const blob = new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'ta-matching-export.json';
-    a.click();
-  });
 })();
 </script>
 </body>

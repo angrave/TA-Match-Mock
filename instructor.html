@@ -19,68 +19,59 @@
 
   <div id="formArea" style="display:none">
 
-    <div class="instructions">
-      <b>Instructions:</b> Fill out one form for every class you are teaching in the coming year. Answer the
-      questions below, aiming to be as inclusive as possible about absolute requirements as well as preferences.
-      Please realize that most MS/MSc students and PhD students past year 5 are not guaranteed support (some MS/MSc students do have a funding guarantee — those are flagged in the lists below); therefore, if your
-      requirements for TAship eliminate all students who are guaranteed support, it is possible you will not be
-      assigned a TA.
-    </div>
-    <div class="recommendations">
-      <b>Recommendations:</b> This questionnaire asks you to list students you prefer and students you do not wish
-      to have as TAs. Any student you do not list as either preferred or specifically not wanted will be considered
-      acceptable. We strongly recommend that you speak with students you list as preferred in advance, so they know
-      to also select your course as preferred.
-    </div>
-
-    <!-- Thesis students — always visible, instructor-level -->
-    <div class="panel" id="thesisPanel">
-      <label>Your thesis students (PhD, MS, or MSc)</label>
-      <table class="thesis-table" id="thesisTable">
-        <thead>
-          <tr>
-            <th>NetID / Email</th>
-            <th>Name</th>
-            <th>PhD / MS / MSc</th>
-            <th>Program Year</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody id="thesisBody"></tbody>
-      </table>
-      <button class="btn secondary" id="addThesisRow" type="button" style="margin-top:0.5rem">+ Add student</button>
-    </div>
-
-    <!-- Students to avoid — always visible, instructor-level -->
-    <div class="panel" id="avoidPanel">
-      <h2>Students you do not want to work with</h2>
-      <div class="row" style="align-items:flex-end">
-        <div>
-          <label>Add student</label>
-          <select id="avoidStuSel" data-combobox></select>
-        </div>
-        <button class="btn secondary" id="addAvoidStu" type="button" style="flex:0 0 auto">Add to avoid list</button>
+    <!-- Page 1: General Info -->
+    <div class="form-page" data-page="1">
+      <div class="instructions">
+        <b>Instructions:</b> Fill out one form for every class you are teaching in the coming year. Answer the
+        questions below, aiming to be as inclusive as possible about absolute requirements as well as preferences.
+        Please realize that most MS/MSc students and PhD students past year 5 are not guaranteed support (some MS/MSc students do have a funding guarantee — those are flagged in the lists below); therefore, if your
+        requirements for TAship eliminate all students who are guaranteed support, it is possible you will not be
+        assigned a TA.
       </div>
-      <div class="ordered-list" id="avoidStuList"></div>
-    </div>
+      <div class="recommendations">
+        <b>Recommendations:</b> This questionnaire asks you to list students you prefer and students you do not wish
+        to have as TAs. Any student you do not list as either preferred or specifically not wanted will be considered
+        acceptable. We strongly recommend that you speak with students you list as preferred in advance, so they know
+        to also select your course as preferred.
+      </div>
 
-    <!-- My courses nav -->
-    <div class="panel" id="courseNav"></div>
+      <div class="panel" id="thesisPanel">
+        <label>Your thesis students (PhD, MS, or MSc)</label>
+        <table class="thesis-table" id="thesisTable">
+          <thead>
+            <tr>
+              <th>NetID / Email</th>
+              <th>Name</th>
+              <th>PhD / MS / MSc</th>
+              <th>Program Year</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="thesisBody"></tbody>
+        </table>
+        <button class="btn secondary" id="addThesisRow" type="button" style="margin-top:0.5rem">+ Add student</button>
+      </div>
 
-    <!-- Course identity (hidden, used by JS) -->
-    <div id="courseFormPanel" style="display:none">
-      <div id="i_course_info" style="display:none"></div>
-    </div>
+      <div class="panel" id="avoidPanel">
+        <h2>Students you do not want to work with</h2>
+        <div class="row" style="align-items:flex-end">
+          <div>
+            <label>Add student</label>
+            <select id="avoidStuSel" data-combobox></select>
+          </div>
+          <button class="btn secondary" id="addAvoidStu" type="button" style="flex:0 0 auto">Add to avoid list</button>
+        </div>
+        <div class="ordered-list" id="avoidStuList"></div>
+      </div>
+    </div><!-- end page 1 -->
 
-    <div id="courseFormBody" style="display:none">
-    <!-- Tab switcher -->
-    <div class="form-tabs">
-      <button class="form-tab-btn active" data-tab="requirements" id="tabBtn-requirements">Course Requirements</button>
-      <button class="form-tab-btn" data-tab="preferences" id="tabBtn-preferences">TA Preferences</button>
-    </div>
+    <!-- Page 2: My Courses -->
+    <div class="form-page" data-page="2" style="display:none">
+      <div class="panel" id="courseNav"></div>
+    </div><!-- end page 2 -->
 
-    <!-- Tab: Course Requirements -->
-    <div id="tab-requirements" class="tab-section">
+    <!-- Page 3: Course Requirements -->
+    <div class="form-page" data-page="3" style="display:none">
       <div class="panel">
         <h2 id="reqsHeading">Requirements &amp; preferences</h2>
         <p class="muted small">
@@ -116,10 +107,10 @@
         <p class="muted small">Describe what the TA will actually be expected to do. This helps students self-assess fit and helps the assignment process. Common responsibilities include leading discussion sections, helping with in-class activities, holding office hours, developing course content or infrastructure, proctoring exams, grading homework, grading exams, providing 1-on-1 tutoring, detecting plagiarism, and managing other course staff such as TAs or CAs. You do not need to list all of these — just the ones relevant to your course, plus any others not listed.</p>
         <textarea id="i_duties" placeholder="e.g. Lead two 50-min discussion sections per week. Hold 2 office hours per week. Grade homework and exams. Help develop autograder infrastructure."></textarea>
       </div>
-    </div>
+    </div><!-- end page 3 -->
 
-    <!-- Tab: TA Preferences -->
-    <div id="tab-preferences" class="tab-section" style="display:none">
+    <!-- Page 4: TA Preferences -->
+    <div class="form-page" data-page="4" style="display:none">
       <div class="panel">
         <h2 id="prefHeading">Preferred TAs</h2>
         <p class="muted">Students you want to work with, in priority order. We will surface eligibility/priority info as you add students.</p>
@@ -150,14 +141,36 @@
         </div>
         <div class="ordered-list" id="backupStuList"></div>
       </div>
+    </div><!-- end page 4 -->
 
+    <!-- Page 5: Review & Submit -->
+    <div class="form-page" data-page="5" style="display:none">
+      <div class="panel">
+        <h2>Review &amp; Submit</h2>
+        <p class="muted">Please review your responses below before submitting.</p>
+        <div id="instrReviewContent"></div>
+      </div>
+    </div><!-- end page 5 -->
+
+    <!-- Thank you (shown after submit) -->
+    <div id="instrThankYou" style="display:none">
+      <div class="panel">
+        <h2>Thank you!</h2>
+        <p>Your TA request has been submitted successfully.</p>
+        <p class="muted">Return to the <a href="index.html">home page</a>.</p>
+      </div>
     </div>
 
+    <!-- Page navigation bar -->
+    <div class="page-nav-bar" id="instrPageNavBar">
+      <button class="btn secondary" id="instrPrevBtn">&#8592; Previous</button>
+      <span id="instrPageIndicator" class="page-indicator">Step 1 of 5: General Info</span>
+      <button class="btn" id="instrNextBtn">Next &#8594;</button>
+    </div>
 
     <div class="toolbar">
       <span id="saveStatus" class="muted"></span>
     </div>
-    </div><!-- end courseFormBody -->
   </div>
 </main>
 <div id="app-footer"></div>
@@ -270,38 +283,6 @@ function initInstructorForm(user) {
 
   loadInstructorLevel();
 
-  // Tab switching
-  function activateTab(tabName) {
-    const btn = document.querySelector(`.form-tab-btn[data-tab="${tabName}"]`);
-    if (!btn) return;
-    document.querySelectorAll('.form-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
-    document.querySelectorAll('.tab-section').forEach(s => s.style.display = 'none');
-    const section = document.getElementById(`tab-${tabName}`);
-    if (!section) return;
-    section.style.display = 'block';
-    section.classList.remove('tab-section');
-    void section.offsetWidth;
-    section.classList.add('tab-section');
-  }
-
-  document.querySelectorAll('.form-tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => activateTab(btn.dataset.tab));
-  });
-
-  function tabFromHash(hash) {
-    if (hash === '#CourseReq') return 'requirements';
-    if (hash === '#TAPref') return 'preferences';
-    return null;
-  }
-
-  const initialTab = tabFromHash(window.location.hash);
-  if (initialTab) activateTab(initialTab);
-
-  window.addEventListener('hashchange', () => {
-    const tab = tabFromHash(window.location.hash);
-    if (tab) activateTab(tab);
-  });
-
   const stuOpts = `<option value="">— Select student —</option>` +
     DATA.students.map(s => `<option value="${s.netid}" data-search="${s.name} ${s.netid}">${studentLabel(s)}</option>`).join('');
   ['prefStuSel','backupStuSel','avoidStuSel'].forEach(id => document.getElementById(id).innerHTML = stuOpts);
@@ -315,7 +296,6 @@ function initInstructorForm(user) {
     if (input) input.value = '';
   }
 
-  // Clear each student combobox when clicked so the user can type fresh
   ['prefStuSel','backupStuSel','avoidStuSel'].forEach(id => {
     const input = document.getElementById(id)?.parentNode?.querySelector('.combobox-input');
     if (input) input.addEventListener('focus', () => { input.value = ''; });
@@ -331,7 +311,6 @@ function initInstructorForm(user) {
         const cid = k.slice(prefix.length);
         const found = DATA.courses.find(c => c.course_id === cid);
         if (found) return (found.allocTA === 'yes' && found.slots > 0) ? found : null;
-        // Instructor-added course not in DATA — synthesize from saved response
         const resp = responses[k];
         if (resp?.course_id) {
           return {
@@ -352,8 +331,6 @@ function initInstructorForm(user) {
 
   function selectCourse(cid) {
     fields.course_id = cid;
-    document.getElementById('courseFormPanel').style.display = 'block';
-    document.getElementById('courseFormBody').style.display = 'block';
     loadForCourse();
     renderCourseNav();
   }
@@ -374,10 +351,10 @@ function initInstructorForm(user) {
 
     let html = `<h2 style="margin-top:0">My Courses</h2>`;
     if (courses.length) {
-      html += `<p class="muted small" style="margin-bottom:10px">Click a row to fill out TA preferences for that course.</p>
+      html += `<p class="muted small" style="margin-bottom:10px">Use <b>Edit</b> to fill out requirements and TA preferences for each course. All courses must be marked OK before you can review.</p>
         <table class="course-nav-table">
           <thead><tr>
-            <th>Course</th><th>Title</th><th>Expected TA Slot(s)</th><th># Preferred Students</th><th>Status</th>
+            <th>Course</th><th>Title</th><th>Expected TA Slot(s)</th><th># Preferred Students</th><th>Status</th><th></th>
           </tr></thead><tbody>`;
 
       courses.forEach(c => {
@@ -397,19 +374,20 @@ function initInstructorForm(user) {
         }
 
         const threshold = Math.ceil(1.5 * c.slots);
+        const isOkay = !!(courseReqs.trim() || coursePrefs.trim()) || prefCount > 0;
         const warns = [];
         if (!courseArea.trim())
           warns.push(`<span class="cnav-warn">⚠ No research area set</span>`);
         if (!courseReqs.trim() && !coursePrefs.trim())
-          warns.push(`<span class="cnav-warn">⚠ No preferences defined</span>`);
+          warns.push(`<span class="cnav-warn">⚠ No requirements/preferences</span>`);
         if (prefCount === 0)
-          warns.push(`<span class="cnav-warn">⚠ No preferred students added</span>`);
+          warns.push(`<span class="cnav-warn">⚠ No preferred TAs</span>`);
         else if (prefCount < threshold)
-          warns.push(`<span class="cnav-warn">⚠ Only ${prefCount} student${prefCount !== 1 ? 's' : ''} (need ≥ ${threshold} for ${c.slots} slot${c.slots !== 1 ? 's' : ''})</span>`);
+          warns.push(`<span class="cnav-warn">⚠ Only ${prefCount} student${prefCount !== 1 ? 's' : ''} (need ≥ ${threshold})</span>`);
 
-        const statusCell = warns.length
-          ? warns.join('')
-          : `<span class="cnav-badge cnav-started">✓ Ready</span>`;
+        const statusCell = isOkay
+          ? `<span class="cnav-badge cnav-started">✓ OK</span>${warns.length ? '<br><span style="font-size:0.8em">' + warns.join(' ') + '</span>' : ''}`
+          : `<span class="cnav-badge cnav-missing">Incomplete</span><br><span style="font-size:0.8em">${warns.join(' ')}</span>`;
 
         html += `<tr class="cnav-row${isActive ? ' cnav-active' : ''}" data-cid="${c.course_id}">
           <td class="cnav-cid">${c.course_id}</td>
@@ -417,6 +395,7 @@ function initInstructorForm(user) {
           <td class="cnav-center">${c.slots}</td>
           <td class="cnav-center">${prefCount > 0 ? prefCount : '—'}</td>
           <td class="cnav-status">${statusCell}</td>
+          <td class="cnav-center"><button class="btn secondary cnav-edit-btn" data-cid="${c.course_id}" style="white-space:nowrap">Edit</button></td>
         </tr>`;
       });
 
@@ -461,9 +440,16 @@ function initInstructorForm(user) {
     const _slotsWarn = document.getElementById('addCourseSlotsWarn');
     if (_slotsWarn) _slotsWarn.style.display = parseInt(addCourseFormState.slots, 10) === 0 ? 'block' : 'none';
 
-    el.querySelectorAll('.cnav-row').forEach(row => {
-      row.addEventListener('click', () => selectCourse(row.dataset.cid));
+    el.querySelectorAll('.cnav-edit-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        selectCourse(btn.dataset.cid);
+        const targetPage = (typeof editMode !== 'undefined' && editMode === 'pref') ? 4 : 3;
+        instrNavigateTo(targetPage);
+      });
     });
+
+    updateReviewBtn();
 
     function autoFillTitle() {
       const base = document.getElementById('addCourseBase').value.trim().toUpperCase();
@@ -529,8 +515,9 @@ function initInstructorForm(user) {
 
       addCourseFormState.base = ''; addCourseFormState.section = '';
       addCourseFormState.title = ''; addCourseFormState.slots = '1';
-      renderCourseNav();
       selectCourse(cid);
+      const targetPage = (typeof editMode !== 'undefined' && editMode === 'pref') ? 4 : 3;
+      instrNavigateTo(targetPage);
     });
   }
 
@@ -582,7 +569,7 @@ function initInstructorForm(user) {
     renderSmart();
   }
 
-  // Initial render of nav; auto-select first course
+  // Initial render of nav; auto-select first course (don't navigate)
   renderCourseNav();
   const _initial = myCoursesFor();
   if (_initial.length) selectCourse(_initial[0].course_id);
@@ -643,6 +630,7 @@ function initInstructorForm(user) {
     let html = `<div class="pref-table-wrap"><table class="pref-table">
       <thead><tr>
         <th>#</th>
+        <th>Order</th>
         <th>Student</th>
         <th>Year</th>
         <th>Program</th>
@@ -650,7 +638,6 @@ function initInstructorForm(user) {
         <th>Taken<span class="th-sub">Before</span></th>
         <th>TA/CA'd<span class="th-sub">Before</span></th>
         <th>Student<span class="th-sub">Course Rank</span></th>
-        <th>Order</th>
         <th></th>
       </tr></thead><tbody>`;
 
@@ -691,6 +678,10 @@ function initInstructorForm(user) {
 
       html += `<tr class="${movedCls}" data-nid="${nid}">
         <td class="col-pos">${i + 1}</td>
+        <td>
+          <button class="mv-btn mv-up" data-nid="${nid}"${i === 0 ? ' disabled' : ''}>▲</button>
+          <button class="mv-btn mv-dn" data-nid="${nid}"${i === arr.length - 1 ? ' disabled' : ''}>▼</button>
+        </td>
         <td class="col-name">
           <div class="stu-name">${name}</div>
           <div class="stu-nid">${nid}${mailLink}</div>
@@ -703,10 +694,6 @@ function initInstructorForm(user) {
         <td>${takenCell}</td>
         <td>${tadCell}</td>
         <td class="col-rank">${rankCell}</td>
-        <td>
-          <button class="mv-btn mv-up" data-nid="${nid}"${i === 0 ? ' disabled' : ''}>▲</button>
-          <button class="mv-btn mv-dn" data-nid="${nid}"${i === arr.length - 1 ? ' disabled' : ''}>▼</button>
-        </td>
         <td><button class="x-btn" data-nid="${nid}" title="Remove">×</button></td>
       </tr>`;
     });
@@ -857,11 +844,12 @@ function initInstructorForm(user) {
   const obs = new MutationObserver(renderSmart);
   obs.observe(document.getElementById('prefStuList'), { childList: true });
 
-  // Auto-save: debounced to at most once per second (mirrors student.html pattern)
+  // Auto-save disabled — data is saved on explicit Submit.
+  // To re-enable, uncomment the body of scheduleSave.
   let saveTimer = null;
   function scheduleSave() {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(doSave, 1000);
+    // clearTimeout(saveTimer);
+    // saveTimer = setTimeout(doSave, 1000);
   }
   function doSave() {
     if (!fields.course_id) return;
@@ -878,6 +866,207 @@ function initInstructorForm(user) {
 
   renderAll();
   renderSmart();
+
+  // ── Paging ──────────────────────────────────────────────────────────────────
+
+  // editMode from URL fragment: 'req' = #CourseReq, 'pref' = #TAPref, 'both' = default
+  const editMode = (() => {
+    const h = window.location.hash;
+    if (h === '#CourseReq') return 'req';
+    if (h === '#TAPref') return 'pref';
+    return 'both';
+  })();
+
+  const INSTR_PAGE_NAMES = ['General Info', 'My Courses', 'Course Requirements', 'TA Preferences', 'Review & Submit'];
+  let instrCurrentPage = 1;
+  const pageHistory = []; // navigation history stack
+
+  // Navigate to page n, pushing current page onto history
+  function instrNavigateTo(n) {
+    pageHistory.push(instrCurrentPage);
+    showInstrPage(n);
+  }
+
+  // Go back via history stack
+  function instrNavigateBack() {
+    const prev = pageHistory.pop();
+    if (prev !== undefined) showInstrPage(prev);
+  }
+
+  function isCourseOkay(c) {
+    const responses = getInstructorResponses();
+    const isActive = fields.course_id === c.course_id;
+    const f = isActive ? fields : (responses[`${me.netid}::${c.course_id}`]?.fields || {});
+    const s = isActive ? state : (responses[`${me.netid}::${c.course_id}`]?.state || {});
+    return !!(f.reqs?.trim() || f.prefs?.trim()) || (s.prefStudents || []).length > 0;
+  }
+
+  function allCoursesOkay() {
+    return myCoursesFor().every(isCourseOkay);
+  }
+
+  function updateReviewBtn() {
+    const page2 = document.querySelector('#formArea .form-page[data-page="2"]');
+    if (!page2 || page2.style.display === 'none') return;
+    const nextBtn = document.getElementById('instrNextBtn');
+    if (!nextBtn) return;
+    const okay = allCoursesOkay();
+    nextBtn.disabled = !okay;
+    nextBtn.style.opacity = okay ? '' : '0.45';
+    nextBtn.title = okay ? '' : 'All courses must have TAs added or requirements filled in before reviewing';
+  }
+
+  function showInstrPage(n) {
+    document.querySelectorAll('#formArea .form-page').forEach(p => {
+      p.style.display = (+p.dataset.page === n) ? '' : 'none';
+    });
+    instrCurrentPage = n;
+
+    const prevBtn = document.getElementById('instrPrevBtn');
+    const nextBtn = document.getElementById('instrNextBtn');
+
+    prevBtn.style.visibility = pageHistory.length === 0 ? 'hidden' : 'visible';
+    nextBtn.disabled = false;
+    nextBtn.style.opacity = '';
+    nextBtn.title = '';
+    nextBtn.classList.remove('primary');
+
+    if (n === 1) {
+      document.getElementById('instrPageIndicator').textContent = 'Step 1 of 5: General Info';
+      nextBtn.textContent = 'Next →';
+    } else if (n === 2) {
+      document.getElementById('instrPageIndicator').textContent = 'Step 2 of 5: My Courses';
+      nextBtn.textContent = 'Review';
+      updateReviewBtn();
+    } else if (n === 3) {
+      const cid = fields.course_id;
+      document.getElementById('instrPageIndicator').textContent = `Course Requirements${cid ? ': ' + cid : ''}`;
+      // In req-only or pref-only mode the Next from editing returns to My Courses;
+      // in 'both' mode Next proceeds to TA Preferences.
+      nextBtn.textContent = editMode === 'both' ? 'Next: TA Preferences →' : 'Back to My Courses';
+    } else if (n === 4) {
+      const cid = fields.course_id;
+      document.getElementById('instrPageIndicator').textContent = `TA Preferences${cid ? ': ' + cid : ''}`;
+      nextBtn.textContent = 'Back to My Courses';
+    } else if (n === 5) {
+      document.getElementById('instrPageIndicator').textContent = 'Step 5 of 5: Review & Submit';
+      nextBtn.textContent = 'Submit';
+      nextBtn.classList.add('primary');
+      renderInstrReview();
+    }
+
+    window.scrollTo(0, 0);
+  }
+
+  // Drain history back to page 2 (My Courses) and navigate there
+  function instrGoToMyCourses() {
+    while (pageHistory.length > 0 && pageHistory[pageHistory.length - 1] !== 2) {
+      pageHistory.pop();
+    }
+    if (pageHistory[pageHistory.length - 1] === 2) {
+      instrNavigateBack(); // pops 2, shows page 2
+    } else {
+      showInstrPage(2); // fallback if history doesn't contain page 2
+    }
+  }
+
+  document.getElementById('instrPrevBtn').addEventListener('click', () => {
+    if ((instrCurrentPage === 3 || instrCurrentPage === 4) && fields.course_id) doSave();
+    instrNavigateBack();
+  });
+
+  document.getElementById('instrNextBtn').addEventListener('click', () => {
+    if (instrCurrentPage === 1) {
+      instrNavigateTo(2);
+    } else if (instrCurrentPage === 2) {
+      if (!allCoursesOkay()) return; // button should be disabled
+      // Confirm if any course has no preferred TAs
+      const noTA = myCoursesFor().filter(c => {
+        const resp = getInstructorResponses()[`${me.netid}::${c.course_id}`];
+        const s = fields.course_id === c.course_id ? state : (resp?.state || {});
+        return (s.prefStudents || []).length === 0;
+      });
+      if (noTA.length > 0) {
+        const names = noTA.map(c => c.course_id).join(', ');
+        if (!confirm(`No preferred TAs have been selected for: ${names}.\n\nAre you okay proceeding without preferred TAs for these courses?`)) return;
+      }
+      instrNavigateTo(5);
+    } else if (instrCurrentPage === 3) {
+      doSave();
+      if (editMode === 'both') {
+        instrNavigateTo(4);
+      } else {
+        instrGoToMyCourses();
+      }
+    } else if (instrCurrentPage === 4) {
+      doSave();
+      instrGoToMyCourses();
+    } else if (instrCurrentPage === 5) {
+      if (fields.course_id) doSave();
+      saveInstructorLevel();
+      document.getElementById('instrPageNavBar').style.display = 'none';
+      document.querySelectorAll('#formArea .form-page').forEach(p => p.style.display = 'none');
+      document.getElementById('instrThankYou').style.display = 'block';
+      const st = document.getElementById('saveStatus');
+      st.textContent = 'Submitted ✓ ' + new Date().toLocaleTimeString();
+      st.style.color = 'var(--good)';
+    }
+  });
+
+  function renderInstrReview() {
+    const el = document.getElementById('instrReviewContent');
+    const courses = myCoursesFor();
+    const responses = getInstructorResponses();
+
+    let html = `<table class="review-table">
+      <tr><th>Faculty</th><td>${me.name} (${me.netid})</td></tr>`;
+
+    const thesisFiltered = instrFields.thesisRows.filter(r => r.netid || r.name);
+    if (thesisFiltered.length) {
+      html += `<tr><th>Thesis students</th><td>${thesisFiltered.map(r =>
+        [r.name || r.netid, r.program ? `${r.program} Y${r.year || '?'}` : ''].filter(Boolean).join(' ')
+      ).join(', ')}</td></tr>`;
+    } else {
+      html += `<tr><th>Thesis students</th><td><em class="muted">None listed</em></td></tr>`;
+    }
+
+    if (instrState.avoidStudents.length) {
+      const names = instrState.avoidStudents.map(nid => {
+        const s = DATA.students.find(x => x.netid === nid);
+        return s ? s.name : nid;
+      });
+      html += `<tr><th>Students to avoid</th><td>${names.join(', ')}</td></tr>`;
+    }
+
+    html += `<tr><th>Courses submitted</th><td>${courses.length ? courses.map(c => c.course_id).join(', ') : '<em class="muted">None</em>'}</td></tr>`;
+    html += '</table>';
+
+    if (courses.length) {
+      html += '<h3 style="margin-top:1.2rem">Per-course details</h3>';
+      courses.forEach(c => {
+        const resp = fields.course_id === c.course_id
+          ? { fields: { ...fields }, state: { ...state } }
+          : responses[`${me.netid}::${c.course_id}`] || {};
+        const f = resp.fields || {};
+        const s = resp.state || {};
+        html += `<div class="review-course-block">
+          <div class="review-course-title">${c.course_id} — ${c.title}</div>
+          <table class="review-table">
+            <tr><th>Research area</th><td>${f.area || '—'}</td></tr>
+            <tr><th>Requirements</th><td>${f.reqs || '<em class="muted">None specified</em>'}</td></tr>
+            <tr><th>Preferences</th><td>${f.prefs || '<em class="muted">None specified</em>'}</td></tr>
+            <tr><th>Duties</th><td>${f.duties || '<em class="muted">Not specified</em>'}</td></tr>
+            <tr><th>Preferred students</th><td>${(s.prefStudents || []).length} listed</td></tr>
+            <tr><th>Backup students</th><td>${(s.backupStudents || []).length} listed</td></tr>
+          </table>
+        </div>`;
+      });
+    }
+
+    el.innerHTML = html;
+  }
+
+  showInstrPage(1);
 }
 </script>
 </body>

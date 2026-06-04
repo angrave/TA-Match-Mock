@@ -1,5 +1,5 @@
 .stu-meta {
-  font-size: 0.78em;
+  font-size: 11pt;
   color: var(--muted);
   margin-top: 2px;
   line-height: 1.3;
@@ -13,7 +13,7 @@
 .thesis-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9em;
+  font-size: 11pt;
   margin-top: 0.4rem;
 }
 .thesis-table th {
@@ -38,7 +38,7 @@
   padding: 0.3rem 0.4rem;
   border: 1px solid var(--border);
   border-radius: 4px;
-  font-size: 0.9em;
+  font-size: 11pt;
 }
 .thesis-input:focus, .thesis-select:focus {
   outline: 2px solid var(--primary);
@@ -51,7 +51,7 @@
   padding: 0.3rem 0.4rem;
   border: 1px solid var(--border);
   border-radius: 4px;
-  font-size: 0.9em;
+  font-size: 11pt;
 }
 .thesis-del {
   background: none;
@@ -80,7 +80,7 @@
   padding: 0.35rem 0.45rem;
   border: 1px solid var(--border);
   border-radius: 4px;
-  font-size: 0.9em;
+  font-size: 11pt;
   box-sizing: border-box;
 }
 .cnav-input:focus {
@@ -89,15 +89,25 @@
 }
 .cnav-slots-warn {
   margin-top: 0.25rem;
-  font-size: 0.78em;
+  font-size: 11pt;
   color: var(--danger, #c00);
   max-width: 12rem;
   line-height: 1.3;
 }
 .req-badge {
-  font-size: 0.75em;
+  font-size: 11pt;
   font-weight: 600;
   color: var(--danger, #c00);
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+.cnav-missing {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 11pt;
+  font-weight: 600;
+  background: #fde;
+  color: #a00;
+  border: 1px solid #e8b;
 }

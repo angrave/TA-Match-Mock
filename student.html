@@ -19,172 +19,211 @@
 
   <div id="formArea" style="display:none">
 
-    <div class="instructions">
-      <b>Instructions:</b> Please fill out the form indicating your eligibility and interest in each course
-      offered in the coming semester. You should consult the list of courses and their eligibility requirements
-      before filling out this form. Note that assignment is based on availability of positions and eligibility
-      for teaching the course.
-    </div>
-    <div class="recommendations">
-      <b>Recommendations:</b> Courses at the 400-level (and even some at lower levels) have explicit requirements
-      and the faculty may also list preferences. If you wish to teach one of these classes and meet the requirements,
-      you are strongly recommended to write to the faculty teaching the class about your interest, in advance of
-      filling out this form.
-    </div>
+    <!-- Page 1: About You -->
+    <div class="form-page" data-page="1">
+      <div class="instructions">
+        <b>Instructions:</b> Please fill out the form indicating your eligibility and interest in each course
+        offered in the coming semester. You should consult the list of courses and their eligibility requirements
+        before filling out this form. Note that assignment is based on availability of positions and eligibility
+        for teaching the course.
+      </div>
+      <div class="recommendations">
+        <b>Recommendations:</b> Courses at the 400-level (and even some at lower levels) have explicit requirements
+        and the faculty may also list preferences. If you wish to teach one of these classes and meet the requirements,
+        you are strongly recommended to write to the faculty teaching the class about your interest, in advance of
+        filling out this form.
+      </div>
 
-    <div class="panel">
-      <h2>About you</h2>
-      <div class="row">
-        <div>
-          <label>NetID</label>
-          <input type="text" id="f_netid" readonly />
+      <div class="panel">
+        <h2>About you</h2>
+        <div class="row">
+          <div>
+            <label>NetID</label>
+            <input type="text" id="f_netid" readonly />
+          </div>
+          <div>
+            <label>Full name</label>
+            <input type="text" id="f_name" readonly />
+          </div>
         </div>
-        <div>
-          <label>Full name</label>
-          <input type="text" id="f_name" readonly />
+        <div class="row">
+          <div>
+            <label>Thesis advisor (name)</label>
+            <input type="text" id="f_advisor" placeholder="e.g. Lawrence Angrave" />
+          </div>
+          <div>
+            <label>Research area</label>
+            <select id="f_area">
+              <option value="">— Select —</option>
+              <option>AI</option><option>DAIS</option><option>Theory</option>
+              <option>Architecture</option><option>Systems</option><option>Security</option>
+              <option>Graphics</option><option>PL</option><option>SE</option>
+              <option>SciComp</option><option>Parallel</option><option>Bioinformatics</option>
+              <option>Robotics</option><option>General</option>
+            </select>
+          </div>
         </div>
-      </div>
-      <div class="row">
-        <div>
-          <label>Thesis advisor (name)</label>
-          <input type="text" id="f_advisor" placeholder="e.g. Lawrence Angrave" />
+        <div class="row">
+          <div>
+            <label>Program</label>
+            <input type="text" id="f_program" readonly />
+          </div>
+          <div>
+            <label>Eligible to TA (language exam passed if needed)?</label>
+            <select id="f_eligible">
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+              <option value="exempt">Not required</option>
+            </select>
+          </div>
         </div>
-        <div>
-          <label>Research area</label>
-          <select id="f_area">
-            <option value="">— Select —</option>
-            <option>AI</option><option>DAIS</option><option>Theory</option>
-            <option>Architecture</option><option>Systems</option><option>Security</option>
-            <option>Graphics</option><option>PL</option><option>SE</option>
-            <option>SciComp</option><option>Parallel</option><option>Bioinformatics</option>
-            <option>Robotics</option><option>General</option>
-          </select>
+        <div class="row">
+          <div id="phdRow">
+            <label>Do you have a funding guarantee this semester?</label>
+            <select id="f_guarantee">
+              <option value="yes">Yes — I have a funding guarantee (PhD within year 5, or MS/MSc with guaranteed support)</option>
+              <option value="no">No — I do not have a funding guarantee</option>
+            </select>
+          </div>
         </div>
-      </div>
-      <div class="row">
-        <div>
-          <label>Program</label>
-          <input type="text" id="f_program" readonly />
+        <label class="checkline">
+          <input type="checkbox" id="f_prevTA" />
+          I have <b>previously held a TA appointment at University of Illinois</b>
+        </label>
+
+        <label>Times you are <b>absolutely not available</b> (due to required courses):</label>
+        <textarea id="f_unavail" placeholder="e.g. MWF 9-10am (CS 591 seminar), Tu/Th 2-3:15pm (CS 421)"></textarea>
+
+        <label>Rate your C++ skills</label>
+        <div class="radio-group" id="cppRating">
+          <label><input type="radio" name="cpp" value="None" /> None</label>
+          <label><input type="radio" name="cpp" value="Minimal" /> Minimal</label>
+          <label><input type="radio" name="cpp" value="Basic" /> Basic</label>
+          <label><input type="radio" name="cpp" value="Good" /> Good</label>
+          <label><input type="radio" name="cpp" value="Very good" /> Very good</label>
+          <label><input type="radio" name="cpp" value="Excellent" /> Excellent</label>
         </div>
-        <div>
-          <label>Eligible to TA (language exam passed if needed)?</label>
-          <select id="f_eligible">
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-            <option value="exempt">Not required</option>
-          </select>
-        </div>
-      </div>
-      <div class="row">
-        <div id="phdRow">
-          <label>Do you have a funding guarantee this semester?</label>
-          <select id="f_guarantee">
-            <option value="yes">Yes — I have a funding guarantee (PhD within year 5, or MS/MSc with guaranteed support)</option>
-            <option value="no">No — I do not have a funding guarantee</option>
-          </select>
-        </div>
-      </div>
-      <label class="checkline">
-        <input type="checkbox" id="f_prevTA" />
-        I have <b>previously held a TA appointment at University of Illinois</b>
-      </label>
 
-      <label>Times you are <b>absolutely not available</b> (due to required courses):</label>
-      <textarea id="f_unavail" placeholder="e.g. MWF 9-10am (CS 591 seminar), Tu/Th 2-3:15pm (CS 421)"></textarea>
-
-      <label>Rate your C++ skills</label>
-      <div class="radio-group" id="cppRating">
-        <label><input type="radio" name="cpp" value="None" /> None</label>
-        <label><input type="radio" name="cpp" value="Minimal" /> Minimal</label>
-        <label><input type="radio" name="cpp" value="Basic" /> Basic</label>
-        <label><input type="radio" name="cpp" value="Good" /> Good</label>
-        <label><input type="radio" name="cpp" value="Very good" /> Very good</label>
-        <label><input type="radio" name="cpp" value="Excellent" /> Excellent</label>
-      </div>
-
-      <label>Classes you have already TA'd here at UIUC</label>
-      <table class="prior-ta" id="priorTA_table">
-        <thead>
-          <tr>
-            <th style="width:30%">Course</th>
-            <th style="width:25%">Semester</th>
-            <th>Professor</th>
-            <th class="actions"></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <button type="button" class="btn secondary" id="priorTA_add">+ Add row</button>
-    </div>
-
-    <div class="panel">
-      <h2>Appointment percentage preference</h2>
-      <div class="radio-group">
-        <label><input type="radio" name="appt" value="50only" /> I would only accept a 50% appointment and not a 25%</label>
-        <label><input type="radio" name="appt" value="50pref" checked /> I prefer a 50% appointment but would accept a 25%</label>
-        <label><input type="radio" name="appt" value="25pref" /> I prefer a 25% appointment but would accept a 50%</label>
-        <label><input type="radio" name="appt" value="25only" /> I would only accept a 25% appointment, and not a 50%</label>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Faculty to avoid</h2>
-      <label>Faculty you do <b>not</b> want to work with</label>
-      <div class="row" style="align-items:flex-end">
-        <select id="avoidFacSel" data-combobox></select>
-        <button class="btn secondary" id="addAvoidFac" type="button" style="flex:0 0 auto">Add</button>
-      </div>
-      <div class="ordered-list" id="avoidFacList"></div>
-    </div>
-
-    <div class="panel">
-      <h2>Course preferences</h2>
-      <p class="muted">
-        Courses at the 400-level or higher (marked <span class="req-tag">REQ</span>) have explicit requirements;
-        the default rank for those is <b>F</b>. For lower courses, the default rank is <b>C</b>.
-        Choose <b>A</b> (most desired), <b>B</b> (moderate), <b>C</b> (least preferred), or <b>F</b> (no background).
-        You may rank at most <b>5</b> courses as <b>A</b>.
-      </p>
-
-      <h3>Top 5 (from your A-ranked courses)</h3>
-      <p class="muted small">List your top 5 courses, in order. Selections must be courses you ranked as <b>A</b>.</p>
-      <div id="topFiveContainer"></div>
-
-      <h3>Course Ranking</h3>
-      <div class="filters">
-        <input type="text" id="courseFilter" class="search-input" placeholder="Filter by course id, title, or professor..." />
-        <label><input type="checkbox" id="filter100" checked /> 100</label>
-        <label><input type="checkbox" id="filter200" checked /> 200</label>
-        <label><input type="checkbox" id="filter300" checked /> 300</label>
-        <label><input type="checkbox" id="filter400" checked /> 400</label>
-        <label><input type="checkbox" id="filter500" checked /> 500</label>
-        <label><input type="checkbox" id="filterAB" /> Show only A/B</label>
-        <label><input type="checkbox" id="filterPriorTA" /> TA'd before</label>
-        <select id="filterArea" class="search-input" style="font-size:0.9em;padding:2px 4px">
-          <option value="">All areas</option>
-          <option>AI</option><option>Architecture</option><option>Bioinformatics</option>
-          <option>DAIS</option><option>General</option><option>Graphics</option>
-          <option>Parallel</option><option>PL</option><option>Robotics</option>
-          <option>SciComp</option><option>SE</option><option>Security</option>
-          <option>Systems</option><option>Theory</option>
-        </select>
-      </div>
-
-      <div style="overflow:auto; max-height:520px; border:1px solid var(--border);">
-        <table class="courses" id="coursesTable">
-          <thead><tr>
-            <th>Course</th><th>Title / Instructor</th><th>Area</th><th>Slots</th><th>Rank<br><span id="rankSummary" class="small" style="font-weight:normal;white-space:nowrap;color:rgba(255,255,255,0.75)"></span></th>
-            <th>Taken as student? <span class="small muted">(A/B only)</span></th>
-            <th>Prior TA/CA?</th>
-          </tr></thead>
+        <label>Classes you have already TA'd here at UIUC</label>
+        <table class="prior-ta" id="priorTA_table">
+          <thead>
+            <tr>
+              <th style="width:30%">Course</th>
+              <th style="width:25%">Semester</th>
+              <th>Professor</th>
+              <th class="actions"></th>
+            </tr>
+          </thead>
           <tbody></tbody>
         </table>
+        <button type="button" class="btn secondary" id="priorTA_add">+ Add row</button>
+      </div>
+    </div><!-- end page 1 -->
+
+    <!-- Page 2: Appointment & Availability -->
+    <div class="form-page" data-page="2" style="display:none">
+      <div class="panel">
+        <h2>Appointment percentage preference</h2>
+        <div class="radio-group">
+          <label><input type="radio" name="appt" value="50only" /> I would only accept a 50% appointment and not a 25%</label>
+          <label><input type="radio" name="appt" value="50pref" checked /> I prefer a 50% appointment but would accept a 25%</label>
+          <label><input type="radio" name="appt" value="25pref" /> I prefer a 25% appointment but would accept a 50%</label>
+          <label><input type="radio" name="appt" value="25only" /> I would only accept a 25% appointment, and not a 50%</label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Faculty to avoid</h2>
+        <label>Faculty you do <b>not</b> want to work with</label>
+        <div class="row" style="align-items:flex-end">
+          <select id="avoidFacSel" data-combobox></select>
+          <button class="btn secondary" id="addAvoidFac" type="button" style="flex:0 0 auto">Add</button>
+        </div>
+        <div class="ordered-list" id="avoidFacList"></div>
+      </div>
+    </div><!-- end page 2 -->
+
+    <!-- Page 3: Course Ranking -->
+    <div class="form-page" data-page="3" style="display:none">
+      <div class="panel">
+        <h2>Course preferences</h2>
+        <p class="muted">
+          Courses at the 400-level or higher (marked <span class="req-tag">REQ</span>) have explicit requirements;
+          the default rank for those is <b>F</b>. For lower courses, the default rank is <b>C</b>.
+          Choose <b>A</b> (most desired), <b>B</b> (moderate), <b>C</b> (least preferred), or <b>F</b> (no background).
+          You may rank at most <b>5</b> courses as <b>A</b>.
+        </p>
+        <p class="muted small">Course websites of most recent semester are also listed at <a href="https://courses.grainger.illinois.edu/" target="_blank">courses.grainger.illinois.edu</a>.</p>
+
+        <div class="filters">
+          <input type="text" id="courseFilter" class="search-input" placeholder="Filter by course id, title, or professor..." />
+          <div class="filter-btns" id="filterBtns">
+            <button type="button" class="filter-btn active" data-filter="all">All</button>
+            <button type="button" class="filter-btn" data-filter="100-300">100–300</button>
+            <button type="button" class="filter-btn" data-filter="400-500">400–500</button>
+            <button type="button" class="filter-btn" data-filter="ab">I Ranked A/B</button>
+            <button type="button" class="filter-btn" data-filter="prior-ta">TA/CA'd Before</button>
+          </div>
+          <select id="filterArea" class="search-input" style="font-size:0.9em;padding:2px 4px">
+            <option value="">All Elective Research Areas</option>
+            <option>AI</option><option>Architecture</option><option>Bioinformatics</option>
+            <option>DAIS</option><option>General</option><option>Graphics</option>
+            <option>Parallel</option><option>PL</option><option>Robotics</option>
+            <option>SciComp</option><option>SE</option><option>Security</option>
+            <option>Systems</option><option>Theory</option>
+          </select>
+        </div>
+
+        <div style="overflow:auto; max-height:520px; border:1px solid var(--border);">
+          <table class="courses" id="coursesTable">
+            <thead><tr>
+              <th>Course</th><th>Title / Instructor</th><th>Area</th><th>Slots</th><th>Rank<br><span id="rankSummary" class="small" style="font-weight:normal;white-space:nowrap;color:rgba(255,255,255,0.75)"></span></th>
+              <th>Taken as student? <span class="small muted">(A/B only)</span></th>
+              <th>Prior TA/CA?</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="banner small">
+        <b>Note:</b> Your responses generate an ordered list of classes that can be fed into the
+        Stable Marriage matching algorithm.
+      </div>
+    </div><!-- end page 3 -->
+
+    <!-- Page 4: Top 5 Priorities -->
+    <div class="form-page" data-page="4" style="display:none">
+      <div class="panel">
+        <h2>Top 5 priorities</h2>
+        <p class="muted small">List your top 5 courses, in order. Selections must be courses you ranked as <b>A</b> on the previous page.</p>
+        <div id="topFiveContainer"></div>
+      </div>
+    </div><!-- end page 4 -->
+
+    <!-- Page 5: Review & Submit -->
+    <div class="form-page" data-page="5" style="display:none">
+      <div class="panel">
+        <h2>Review &amp; Submit</h2>
+        <p class="muted">Please review your responses below before submitting.</p>
+        <div id="reviewContent"></div>
+      </div>
+    </div><!-- end page 5 -->
+
+    <!-- Thank you (shown after submit) -->
+    <div id="thankYouArea" style="display:none">
+      <div class="panel">
+        <h2>Thank you!</h2>
+        <p>Your TA preferences have been submitted successfully.</p>
+        <p class="muted">Return to the <a href="index.html">home page</a>.</p>
       </div>
     </div>
 
-    <div class="banner small">
-      <b>Note:</b> Your responses generate an ordered list of classes that can be fed into the
-      Stable Marriage matching algorithm.
+    <!-- Page navigation bar -->
+    <div class="page-nav-bar" id="pageNavBar">
+      <button class="btn secondary" id="prevPageBtn">&#8592; Previous</button>
+      <span id="pageIndicator" class="page-indicator">Step 1 of 5: About You</span>
+      <button class="btn" id="nextPageBtn">Next &#8594;</button>
     </div>
 
     <div class="toolbar">
@@ -298,6 +337,12 @@ function setupProfAutocomplete(input) {
   input.addEventListener('blur', () => setTimeout(hideDropdown, 150));
 }
 
+function courseInfoUrl(course_id) {
+  const m = course_id.match(/^([A-Za-z]+)(\d+)/);
+  if (!m) return null;
+  return `https://courses.illinois.edu/search/schedule/2026/Fall/${m[1]}/${m[2]}`;
+}
+
 function initStudentForm(user) {
   const me = DATA.students.find(s => s.netid === user.netid);
 
@@ -324,13 +369,12 @@ function initStudentForm(user) {
     avoidFacSel.value = '';
     if (avoidFacInput) avoidFacInput.value = '';
   }
-  // Track whether the user picked an item from the dropdown during the current focus session
   let avoidFacPicked = false;
   avoidFacSel.addEventListener('change', () => { avoidFacPicked = true; });
   if (avoidFacInput) {
     avoidFacInput.addEventListener('focus', () => { avoidFacPicked = false; });
     avoidFacInput.addEventListener('blur', () => {
-      if (!avoidFacPicked) setTimeout(clearAvoidFac, 160); // after combobox's own 150ms blur handler
+      if (!avoidFacPicked) setTimeout(clearAvoidFac, 160);
       avoidFacPicked = false;
     });
   }
@@ -417,33 +461,35 @@ function initStudentForm(user) {
     return lookup;
   }
 
+  // Course filter state
+  let activeFilter = 'all';
+  function updateFilterBtns() {
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.filter === activeFilter);
+    });
+  }
+
   function renderRows() {
     const instrLookup = buildInstrLookup();
     const filter = document.getElementById('courseFilter').value.toLowerCase();
-    const showLvl = {
-      100: document.getElementById('filter100').checked,
-      200: document.getElementById('filter200').checked,
-      300: document.getElementById('filter300').checked,
-      400: document.getElementById('filter400').checked,
-      500: document.getElementById('filter500').checked,
-    };
-    const onlyAB = document.getElementById('filterAB').checked;
-    const onlyPriorTA = document.getElementById('filterPriorTA').checked;
     const areaFilter = document.getElementById('filterArea').value;
     const filtered = DATA.courses.filter(c => {
       if (c.allocTA !== 'yes') return false;
-      if (!showLvl[c.level]) return false;
-      if (areaFilter && c.area !== areaFilter) return false;
       if (filter) {
+        // Text search overrides button filter — match against id, title, instructor, area
         const instr = instrLookup[c.course_id] || {};
         const haystack = `${c.course_id} ${c.title} ${instr.name || ''} ${instr.email || ''} ${c.area}`.toLowerCase();
         if (!haystack.includes(filter)) return false;
+      } else {
+        if (activeFilter === '100-300' && c.level > 300) return false;
+        if (activeFilter === '400-500' && c.level < 400) return false;
+        if (activeFilter === 'ab') {
+          const r = rankFor(c);
+          if (r !== 'A' && r !== 'B') return false;
+        }
+        if (activeFilter === 'prior-ta' && priorTAFor(c.course_id).length === 0) return false;
       }
-      if (onlyAB) {
-        const r = rankFor(c);
-        if (r !== 'A' && r !== 'B') return false;
-      }
-      if (onlyPriorTA && priorTAFor(c.course_id).length === 0) return false;
+      if (areaFilter && c.area !== areaFilter) return false;
       return true;
     });
     tbody.innerHTML = filtered.map((c, rowIdx) => {
@@ -456,18 +502,20 @@ function initStudentForm(user) {
       const instrHTML = instr
         ? `<div class="course-instr">${instr.name} &middot; <a href="mailto:${instr.email}" onclick="event.stopPropagation()">${instr.email}</a></div>`
         : '';
-      const showArea = instr && instr.area && instr.area !== 'N/A';
-      const hasInstrInfo = instr && (instr.reqs || instr.prefs || showArea);
+      const hasInstrInfo = instr && (instr.reqs || instr.prefs);
       const hasReqsInfo = hasInstrInfo || needsDetails;
       const reqAck = state.reqAck[c.course_id] || false;
       const comment = (state.comments[c.course_id] || '').replace(/"/g, '&quot;');
       const commentsInpHTML = `<b>Comments to instructor:</b> <input type="text" class="comments-inp" maxlength="60" placeholder="Optional notes (max 60 chars)" value="${comment}" style="width:280px;font-size:inherit;padding:2px 5px;border:1px solid var(--border);border-radius:3px"/>`;
+      const reqAckWidget = reqAck
+        ? `<span class="req-ack-done">&#10003; I've read and satisfy these requirements</span>`
+        : `<label class="checkline" style="display:inline-flex;margin-top:0.3em"><input type="checkbox" class="req-ack-cb"/>&nbsp;I've read and satisfy these requirements</label>`;
       const reqPrefHTML = hasReqsInfo ? `
         <div class="req-pref-row">
           ${instr && instr.reqs ? `
             <div class="req-col">
-              <div><b>Requirements:</b> ${instr.reqs}</div>
-              <label class="checkline" style="display:inline-flex;margin-top:0.3em"><input type="checkbox" class="req-ack-cb" ${reqAck ? 'checked' : ''}/>&nbsp;I've read and satisfy these requirements</label>
+              <div><b>Must-have Requirements:</b> ${instr.reqs}</div>
+              <div style="margin-top:0.3em">${reqAckWidget}</div>
             </div>` : ''}
           <div class="pref-col">
             ${instr && instr.prefs ? `<div><b>Preferred:</b> ${instr.prefs}</div>` : ''}
@@ -478,13 +526,14 @@ function initStudentForm(user) {
         <tr class="course-detail-row ${rowClass}" data-cid="${c.course_id}">
           <td colspan="7">
             <div class="course-detail-content">
-              ${showArea ? `<div><b>Research area:</b> ${instr.area}</div>` : ''}
               ${reqPrefHTML}
             </div>
           </td>
         </tr>` : '';
+      const infoUrl = courseInfoUrl(c.course_id);
+      const extLink = infoUrl ? ` <a href="${infoUrl}" target="_blank" class="course-ext-link" onclick="event.stopPropagation()" title="View on Illinois course catalog">&#8599;</a>` : '';
       return `<tr class="course-main-row ${rowClass}" data-cid="${c.course_id}"${hasReqsInfo ? ' style="cursor:pointer"' : ''}>
-        <td><span class="${c.level>=400?'lvl-400':''}">${c.course_id}</span>${c.hasReqs?'<span class="req-tag">REQ</span>':''}</td>
+        <td><span class="${c.level>=400?'lvl-400':''}">${c.course_id}</span>${extLink}${c.hasReqs?'<span class="req-tag">REQ</span>':''}</td>
         <td>
           <div>${c.title}</div>
           ${instrHTML}
@@ -529,6 +578,14 @@ function initStudentForm(user) {
       const cid = tr.dataset.cid;
       tr.querySelectorAll(`input[name="rank-${cid}"]`).forEach(r => {
         r.addEventListener('change', () => {
+          if (r.value !== 'F') {
+            const instrData = instrLookup[cid];
+            if (instrData && instrData.reqs && instrData.reqs.trim() && !state.reqAck[cid]) {
+              alert(`This course has "Must-have" requirements. Please expand the course row, read the requirements, and check "I've read and satisfy these requirements" before ranking it as A, B, or C.`);
+              renderRows();
+              return;
+            }
+          }
           if (r.value === 'A') {
             const aCount = Object.entries(state.ranks).filter(([k, v]) => k !== cid && v === 'A').length;
             if (aCount >= 5) {
@@ -549,8 +606,11 @@ function initStudentForm(user) {
       const detailRow = tr.nextElementSibling && tr.nextElementSibling.classList.contains('course-detail-row') ? tr.nextElementSibling : null;
       const reqAckCb = detailRow && detailRow.querySelector('.req-ack-cb');
       if (reqAckCb) reqAckCb.addEventListener('change', () => {
-        state.reqAck[cid] = reqAckCb.checked;
-        scheduleSave();
+        if (reqAckCb.checked) {
+          state.reqAck[cid] = true;
+          renderRows(); // re-render to replace checkbox with permanent tick
+          scheduleSave();
+        }
       });
       const commentsInp = detailRow && detailRow.querySelector('.comments-inp');
       if (commentsInp) commentsInp.addEventListener('input', () => {
@@ -594,10 +654,25 @@ function initStudentForm(user) {
       if (tookProf) setupProfAutocomplete(tookProf);
     });
   }
-  ['courseFilter','filter100','filter200','filter300','filter400','filter500','filterAB','filterPriorTA','filterArea'].forEach(id => {
-    document.getElementById(id).addEventListener('input', renderRows);
-    document.getElementById(id).addEventListener('change', renderRows);
+  const courseFilterEl = document.getElementById('courseFilter');
+  courseFilterEl.addEventListener('input', () => {
+    if (courseFilterEl.value) {
+      activeFilter = 'all';
+      document.getElementById('filterArea').value = '';
+      updateFilterBtns();
+    }
+    renderRows();
   });
+  document.getElementById('filterBtns').addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    activeFilter = btn.dataset.filter;
+    courseFilterEl.value = '';
+    document.getElementById('filterArea').value = '';
+    updateFilterBtns();
+    renderRows();
+  });
+  document.getElementById('filterArea').addEventListener('change', renderRows);
 
   // Top 5
   function renderTopFive() {
@@ -608,7 +683,7 @@ function initStudentForm(user) {
     state.topFive = state.topFive.filter(cid => aCourses.some(c => c.course_id === cid));
 
     if (!aCourses.length) {
-      container.innerHTML = '<div class="muted small">No courses selected — use the table below to search for preferred courses, check the requirements and rank them.</div>';
+      container.innerHTML = '<div class="muted small">No courses ranked A yet — go back to Course Ranking to mark your preferred courses.</div>';
       return;
     }
 
@@ -756,11 +831,12 @@ function initStudentForm(user) {
   renderPriorTA();
   renderRows();
 
-  // Auto-save: debounced to at most once per second
+  // Auto-save disabled — data is saved on explicit Submit.
+  // To re-enable, uncomment the body of scheduleSave.
   let saveTimer = null;
   function scheduleSave() {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(doSave, 1000);
+    // clearTimeout(saveTimer);
+    // saveTimer = setTimeout(doSave, 1000);
   }
   function doSave() {
     const fields = {
@@ -780,7 +856,7 @@ function initStudentForm(user) {
     st.style.color = 'var(--good)';
   }
 
-  // Wire auto-save to all "about you" fields
+  // Wire fields — calls scheduleSave (no-op while auto-save is disabled)
   ['f_advisor','f_area','f_eligible','f_guarantee','f_unavail','f_prevTA'].forEach(id => {
     const el = document.getElementById(id);
     el.addEventListener('input', scheduleSave);
@@ -789,6 +865,92 @@ function initStudentForm(user) {
   document.querySelectorAll('input[name="cpp"], input[name="appt"]').forEach(r => {
     r.addEventListener('change', scheduleSave);
   });
+
+  // ── Paging ──────────────────────────────────────────────────────────────────
+
+  const PAGE_NAMES = ['About You', 'Appointment & Availability', 'Course Ranking', 'Top 5 Priorities', 'Review & Submit'];
+  let currentPage = 1;
+
+  function showPage(n) {
+    document.querySelectorAll('#formArea .form-page').forEach(p => {
+      p.style.display = (+p.dataset.page === n) ? '' : 'none';
+    });
+    currentPage = n;
+    document.getElementById('pageIndicator').textContent = `Step ${n} of 5: ${PAGE_NAMES[n - 1]}`;
+    const prevBtn = document.getElementById('prevPageBtn');
+    const nextBtn = document.getElementById('nextPageBtn');
+    prevBtn.style.visibility = n === 1 ? 'hidden' : 'visible';
+    if (n === 5) {
+      nextBtn.textContent = 'Submit';
+      nextBtn.classList.add('primary');
+      renderReview();
+    } else {
+      nextBtn.textContent = 'Next →';
+      nextBtn.classList.remove('primary');
+    }
+    if (n === 4) renderTopFive();
+    window.scrollTo(0, 0);
+  }
+
+  document.getElementById('prevPageBtn').addEventListener('click', () => {
+    if (currentPage > 1) showPage(currentPage - 1);
+  });
+
+  document.getElementById('nextPageBtn').addEventListener('click', () => {
+    if (currentPage < 5) {
+      showPage(currentPage + 1);
+    } else {
+      doSave();
+      document.getElementById('pageNavBar').style.display = 'none';
+      document.querySelectorAll('#formArea .form-page').forEach(p => p.style.display = 'none');
+      document.getElementById('thankYouArea').style.display = 'block';
+      const st = document.getElementById('saveStatus');
+      st.textContent = 'Submitted ✓ ' + new Date().toLocaleTimeString();
+      st.style.color = 'var(--good)';
+    }
+  });
+
+  function renderReview() {
+    const el = document.getElementById('reviewContent');
+    const cpp = (document.querySelector('input[name="cpp"]:checked') || {}).value || '—';
+    const appt = (document.querySelector('input[name="appt"]:checked') || {}).value || '50pref';
+    const apptLabels = {
+      '50only': '50% only (will not accept 25%)',
+      '50pref': '50% preferred, 25% acceptable',
+      '25pref': '25% preferred, 50% acceptable',
+      '25only': '25% only (will not accept 50%)',
+    };
+    const aRanked = DATA.courses.filter(c => c.allocTA === 'yes' && state.ranks[c.course_id] === 'A');
+    const bRanked = DATA.courses.filter(c => c.allocTA === 'yes' && state.ranks[c.course_id] === 'B');
+    const avoidNames = state.avoidFaculty.map(nid => {
+      const f = DATA.faculty.find(x => x.netid === nid);
+      return f ? f.name : nid;
+    });
+    const priorRows = priorTARows.filter(r => r.course || r.sem || r.prof);
+
+    el.innerHTML = `
+      <table class="review-table">
+        <tr><th>NetID</th><td>${me.netid}</td></tr>
+        <tr><th>Name</th><td>${me.name}</td></tr>
+        <tr><th>Program</th><td>${me.program} Year ${me.year}</td></tr>
+        <tr><th>Advisor</th><td>${document.getElementById('f_advisor').value || '<em class="muted">Not set</em>'}</td></tr>
+        <tr><th>Research area</th><td>${document.getElementById('f_area').value || '—'}</td></tr>
+        <tr><th>TA eligible</th><td>${document.getElementById('f_eligible').value}</td></tr>
+        <tr><th>Funding guarantee</th><td>${document.getElementById('f_guarantee').value === 'yes' ? 'Yes' : 'No'}</td></tr>
+        <tr><th>Previously TA'd at UIUC</th><td>${document.getElementById('f_prevTA').checked ? 'Yes' : 'No'}</td></tr>
+        ${priorRows.length ? `<tr><th>Prior TA positions</th><td>${priorRows.map(r => [r.course, r.sem, r.prof ? '('+r.prof+')' : ''].filter(Boolean).join(' ')).join('; ')}</td></tr>` : ''}
+        <tr><th>Unavailable times</th><td>${document.getElementById('f_unavail').value || '<em class="muted">None stated</em>'}</td></tr>
+        <tr><th>C++ skills</th><td>${cpp}</td></tr>
+        <tr><th>Appointment preference</th><td>${apptLabels[appt] || appt}</td></tr>
+        <tr><th>Faculty to avoid</th><td>${avoidNames.length ? avoidNames.join(', ') : 'None'}</td></tr>
+        <tr><th>A-ranked courses (${aRanked.length})</th><td>${aRanked.map(c => c.course_id).join(', ') || '<em class="muted">None</em>'}</td></tr>
+        <tr><th>B-ranked courses (${bRanked.length})</th><td>${bRanked.map(c => c.course_id).join(', ') || '<em class="muted">None</em>'}</td></tr>
+        <tr><th>Top 5 priorities</th><td>${state.topFive.length ? state.topFive.map((cid, i) => `${i+1}. ${cid}`).join(', ') : '<em class="muted">None set</em>'}</td></tr>
+      </table>
+    `;
+  }
+
+  showPage(1);
 }
 </script>
 </body>

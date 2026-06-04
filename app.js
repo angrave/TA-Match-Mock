@@ -232,6 +232,11 @@ function buildSeededStudentResponse(student, courses, faculty) {
       ranks,
       taken,
       topFive,
+      reqAck: Object.fromEntries(
+        courses
+          .filter(c => c.allocTA === 'yes' && c.hasReqs && (ranks[c.course_id] || 'F') !== 'F')
+          .map(c => [c.course_id, true])
+      ),
     }
   };
 }

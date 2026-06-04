@@ -1,5 +1,5 @@
 .course-instr {
-  font-size: 0.8em;
+  font-size: 11pt;
   color: var(--muted);
   margin-top: 2px;
 }
@@ -16,7 +16,7 @@ tr.course-main-row:hover td    { background: #eaf0f8; }
 tr.course-detail-row.row-even td { background: #efefef; padding: 8px 12px 10px 32px; }
 tr.course-detail-row.row-odd td  { background: #e8e8e8; padding: 8px 12px 10px 32px; }
 .course-detail-content {
-  font-size: 0.88em;
+  font-size: 11pt;
   color: var(--text);
   display: flex;
   flex-direction: column;
@@ -52,7 +52,7 @@ table.prior-ta th, table.prior-ta td {
 }
 table.prior-ta th {
   background: #f3f3f3;
-  font-size: 0.85em;
+  font-size: 11pt;
   font-weight: 600;
 }
 table.prior-ta input {
@@ -108,14 +108,14 @@ table.prior-ta button.row-del:hover {
 }
 .top5-name {
   flex: 1;
-  font-size: 0.9em;
+  font-size: 11pt;
 }
 .top5-btn {
   background: none;
   border: 1px solid var(--border);
   border-radius: 3px;
   cursor: pointer;
-  font-size: 0.85em;
+  font-size: 11pt;
   padding: 1px 6px;
   line-height: 1.5;
   color: var(--text);
@@ -147,7 +147,7 @@ table.prior-ta button.row-del:hover {
 }
 .prof-ac-item {
   padding: 5px 10px;
-  font-size: 0.87em;
+  font-size: 11pt;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -157,8 +157,52 @@ table.prior-ta button.row-del:hover {
 }
 .took-detail { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 3px; }
 .took-field { display: inline-flex; align-items: center; gap: 2px; }
-.took-val { font-size: 0.85em; cursor: pointer; }
+.took-val { font-size: 11pt; cursor: pointer; }
 .took-val:hover { text-decoration: underline dotted; }
-.took-pen { background: none; border: none; cursor: pointer; padding: 0 2px; font-size: 0.8em; color: var(--muted); line-height: 1; }
+.took-pen { background: none; border: none; cursor: pointer; padding: 0 2px; font-size: 11pt; color: var(--muted); line-height: 1; }
 .took-pen:hover { color: var(--illinois-blue); }
-.took-inp { padding: 1px 3px; font-size: 0.85em; }
+.took-inp { padding: 1px 3px; font-size: 11pt; }
+.filter-btns {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-btn {
+  padding: 3px 11px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 11pt;
+  color: var(--text);
+  white-space: nowrap;
+  line-height: 1.6;
+}
+.filter-btn:hover {
+  border-color: var(--illinois-blue);
+  color: var(--illinois-blue);
+}
+.filter-btn.active {
+  background: var(--illinois-blue);
+  color: #fff;
+  border-color: var(--illinois-blue);
+}
+.req-ack-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--good, #1F7A3A);
+  font-weight: 600;
+}
+.course-ext-link {
+  font-size: 11pt;
+  color: var(--muted);
+  text-decoration: none;
+  margin-left: 3px;
+  opacity: 0.7;
+}
+.course-ext-link:hover {
+  opacity: 1;
+  color: var(--illinois-blue);
+}
